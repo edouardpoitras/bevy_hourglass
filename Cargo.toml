@@ -1,0 +1,11 @@
+[package]
+name = "bevy_hourglass"
+version = "0.1.0"
+edition = "2021"
+description = "A flexible hourglass plugin for Bevy applications"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/edouardpoitras/bevy_hourglass"
+keywords = ["bevy", "gamedev", "hourglass", "timer"]
+
+[dependencies]
+bevy = "0.16.0"
