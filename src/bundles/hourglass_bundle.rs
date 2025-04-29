@@ -15,17 +15,8 @@ pub struct HourglassBundle {
     /// Rotation state for the hourglass
     pub rotation: RotationState,
     
-    /// Spatial transform
+    /// Spatial transform - required for positioning
     pub transform: Transform,
-    
-    /// Visibility
-    pub visibility: Visibility,
-    
-    /// Inherited visibility
-    pub inherited_visibility: InheritedVisibility,
-    
-    /// View visibility
-    pub view_visibility: ViewVisibility,
 }
 
 impl Default for HourglassBundle {
@@ -34,9 +25,6 @@ impl Default for HourglassBundle {
             hourglass: HourglassComponent::default(),
             rotation: RotationState::default(),
             transform: Transform::default(),
-            visibility: Visibility::default(),
-            inherited_visibility: InheritedVisibility::default(),
-            view_visibility: ViewVisibility::default(),
         }
     }
 }
@@ -44,8 +32,14 @@ impl Default for HourglassBundle {
 /// Bundle for creating an interactable hourglass
 #[derive(Bundle, Clone)]
 pub struct InteractableHourglassBundle {
-    /// Base hourglass bundle
-    pub base: HourglassBundle,
+    /// Core hourglass component
+    pub hourglass: HourglassComponent,
+    
+    /// Rotation state for the hourglass
+    pub rotation: RotationState,
+    
+    /// Spatial transform - required for positioning
+    pub transform: Transform,
     
     /// Interactable component
     pub interactable: InteractableHourglass,
@@ -54,7 +48,9 @@ pub struct InteractableHourglassBundle {
 impl Default for InteractableHourglassBundle {
     fn default() -> Self {
         Self {
-            base: HourglassBundle::default(),
+            hourglass: HourglassComponent::default(),
+            rotation: RotationState::default(),
+            transform: Transform::default(),
             interactable: InteractableHourglass::default(),
         }
     }
@@ -64,10 +60,9 @@ impl InteractableHourglassBundle {
     /// Create a new interactable hourglass with the specified duration
     pub fn new(duration: Duration) -> Self {
         Self {
-            base: HourglassBundle {
-                hourglass: HourglassComponent::new(duration),
-                ..Default::default()
-            },
+            hourglass: HourglassComponent::new(duration),
+            rotation: RotationState::default(),
+            transform: Transform::default(),
             interactable: InteractableHourglass::default(),
         }
     }
@@ -75,23 +70,22 @@ impl InteractableHourglassBundle {
     /// Create a new interactable hourglass with mouse following enabled
     pub fn with_mouse_following(duration: Duration) -> Self {
         Self {
-            base: HourglassBundle {
-                hourglass: HourglassComponent::new(duration),
-                ..Default::default()
-            },
+            hourglass: HourglassComponent::new(duration),
+            rotation: RotationState::default(),
+            transform: Transform::default(),
             interactable: InteractableHourglass::with_mouse_following(),
         }
     }
     
     /// Set the easing function for the rotation animation
     pub fn with_easing(mut self, easing: EasingFunction) -> Self {
-        self.base.rotation.easing = easing;
+        self.rotation.easing = easing;
         self
     }
     
     /// Set the flip duration for the rotation animation
     pub fn with_flip_duration(mut self, duration: f32) -> Self {
-        self.base.rotation.flip_duration = duration;
+        self.rotation.flip_duration = duration;
         self
     }
 }

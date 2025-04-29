@@ -2,9 +2,12 @@
 
 use std::time::Duration;
 use bevy::prelude::*;
+use crate::components::RotationState;
 
 /// Core component for an hourglass
 #[derive(Component, Debug, Clone)]
+#[require(Transform)]
+#[require(RotationState)]
 pub struct HourglassComponent {
     /// Total time the hourglass can measure
     pub total_time: Duration,

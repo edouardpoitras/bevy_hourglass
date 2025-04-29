@@ -25,67 +25,67 @@ struct HourglassInfoText;
 struct MainHourglass;
 
 /// Set up the scene with camera, hourglass, and UI
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(mut commands: Commands) {
     // Add a 2D camera
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     
-    // Add UI camera and text
-    commands.spawn(NodeBundle {
-        style: Style {
+    // Add UI node and text
+    commands.spawn((
+        Node {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::FlexEnd,
             ..default()
         },
-        ..default()
-    }).with_children(|parent| {
+    )).with_children(|parent| {
         // Add text for displaying hourglass info
         parent.spawn((
-            TextBundle::from_section(
-                "Hourglass: 60s remaining",
-                TextStyle {
-                    font_size: 24.0,
-                    color: Color::WHITE,
-                    ..default()
-                },
-            )
-            .with_style(Style {
+            Node {
                 margin: UiRect::all(Val::Px(20.0)),
                 ..default()
-            }),
+            },
+            Text::new("Hourglass: 60s remaining"),
+            TextFont {
+                font_size: 24.0,
+                ..default()
+            },
+            TextColor::from(Color::WHITE),
+            TextLayout::default(),
             HourglassInfoText,
         ));
     });
     
-    // Spawn a sprite-based hourglass
-    commands.spawn((
-        SpriteHourglassBundle::new(Duration::from_secs(60))
-            .with_size(Vec2::new(100.0, 200.0))
-            .with_container_color(Color::srgb(0.8, 0.8, 0.8))
-            .with_sand_color(Color::srgb(0.9, 0.7, 0.2))
-            .with_flip_duration(1.0)
-            .with_update_during_flip(true),
-        MainHourglass,
-    ));
+    // Spawn a sprite-based hourglass using the helper function
+    let hourglass_entity = spawn_sprite_hourglass(
+        &mut commands,
+        Duration::from_secs(60),
+        Vec2::ZERO,
+        Vec2::new(100.0, 200.0),
+        Color::srgb(0.8, 0.8, 0.8),
+        Color::srgb(0.9, 0.7, 0.2)
+    );
+    
+    // Add the MainHourglass marker and configure additional properties
+    commands.entity(hourglass_entity)
+        .insert(MainHourglass);
     
     // Add instructions
-    commands.spawn(
-        TextBundle::from_section(
-            "Press SPACE to flip the hourglass",
-            TextStyle {
-                font_size: 20.0,
-                color: Color::WHITE,
-                ..default()
-            },
-        )
-        .with_style(Style {
+    commands.spawn((
+        Node {
             position_type: PositionType::Absolute,
             top: Val::Px(20.0),
             left: Val::Px(20.0),
             ..default()
-        }),
-    );
+        },
+        Text::new("Press SPACE to flip the hourglass"),
+        TextFont {
+            font_size: 20.0,
+            ..default()
+        },
+        TextColor::from(Color::WHITE),
+        TextLayout::default(),
+    ));
 }
 
 /// Handle keyboard input to flip the hourglass
@@ -94,7 +94,7 @@ fn handle_keyboard_input(
     mut hourglasses: Query<&mut SpriteHourglass, With<MainHourglass>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
-        if let Ok(mut hourglass) = hourglasses.get_single_mut() {
+        if let Ok(mut hourglass) = hourglasses.single_mut() {
             // Flip the hourglass when space is pressed
             hourglass.flip();
         }
@@ -106,7 +106,7 @@ fn update_ui(
     hourglasses: Query<&SpriteHourglass, With<MainHourglass>>,
     mut text_query: Query<&mut Text, With<HourglassInfoText>>,
 ) {
-    if let (Ok(hourglass), Ok(mut text)) = (hourglasses.get_single(), text_query.get_single_mut()) {
+    if let (Ok(hourglass), Ok(mut text)) = (hourglasses.single(), text_query.single_mut()) {
         let remaining_secs = hourglass.get_time_remaining().as_secs();
         let status = if hourglass.is_flipping() {
             "Flipping"
@@ -118,9 +118,9 @@ fn update_ui(
         
         let running = if hourglass.is_running() { "Running" } else { "Stopped" };
         
-        text.sections[0].value = format!(
+        text.0 = format!(
             "Hourglass: {}s remaining | Status: {} | {}",
             remaining_secs, status, running
-        );
+        ).into();
     }
 }

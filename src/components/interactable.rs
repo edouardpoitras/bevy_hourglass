@@ -1,9 +1,11 @@
 //! Defines the interactable component for user interaction with hourglasses.
 
 use bevy::prelude::*;
+use crate::components::HourglassComponent;
 
 /// Component for making an hourglass interactable
 #[derive(Component, Debug, Clone)]
+#[require(HourglassComponent)]
 pub struct InteractableHourglass {
     /// Whether the hourglass is currently being interacted with
     pub is_interacting: bool,

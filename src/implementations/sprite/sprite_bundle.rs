@@ -1,11 +1,22 @@
-//! Defines bundles for creating sprite-based hourglasses.
+//! Defines components and bundles for creating sprite-based hourglasses.
 
 use bevy::prelude::*;
 use std::time::Duration;
 
-use crate::bundles::HourglassBundle;
 use crate::traits::EasingFunction;
-use super::{SpriteHourglass, SpriteSand, SpriteContainer, TimedFlipBehavior};
+use super::SpriteHourglass;
+
+/// Marker component for the container sprite
+#[derive(Component, Clone)]
+pub struct ContainerSprite;
+
+/// Marker component for the top sand sprite
+#[derive(Component, Clone)]
+pub struct TopSandSprite;
+
+/// Marker component for the bottom sand sprite
+#[derive(Component, Clone)]
+pub struct BottomSandSprite;
 
 /// Bundle for creating a sprite-based hourglass
 #[derive(Bundle, Clone)]
@@ -14,53 +25,68 @@ pub struct SpriteHourglassBundle {
     pub hourglass: SpriteHourglass,
     
     /// Sprite component for the container
-    pub container_sprite: SpriteBundle,
+    pub container_sprite: ContainerSprite,
     
-    /// Sprite component for the top sand
-    pub top_sand_sprite: SpriteBundle,
+    /// Container sprite
+    pub container: Sprite,
     
-    /// Sprite component for the bottom sand
-    pub bottom_sand_sprite: SpriteBundle,
+    /// Container transform
+    pub container_transform: Transform,
+    
+    /// Marker component for the top sand sprite
+    pub top_sand_sprite: TopSandSprite,
+    
+    /// Top sand sprite
+    pub top_sand: Sprite,
+    
+    /// Top sand transform
+    pub top_sand_transform: Transform,
+    
+    /// Marker component for the bottom sand sprite
+    pub bottom_sand_sprite: BottomSandSprite,
+    
+    /// Bottom sand sprite
+    pub bottom_sand: Sprite,
+    
+    /// Bottom sand transform
+    pub bottom_sand_transform: Transform,
 }
 
 impl Default for SpriteHourglassBundle {
     fn default() -> Self {
         // Create default sprites
-        let container_sprite = SpriteBundle {
-            sprite: Sprite {
-                color: Color::srgb(0.8, 0.8, 0.8),
-                custom_size: Some(Vec2::new(100.0, 200.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+        let container = Sprite {
+            color: Color::srgb(0.8, 0.8, 0.8),
+            custom_size: Some(Vec2::new(100.0, 200.0)),
             ..Default::default()
         };
+        let container_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 0.0));
         
-        let top_sand_sprite = SpriteBundle {
-            sprite: Sprite {
-                color: Color::srgb(0.8, 0.6, 0.2),
-                custom_size: Some(Vec2::new(80.0, 80.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_translation(Vec3::new(0.0, 50.0, 0.1)),
+        let top_sand = Sprite {
+            color: Color::srgb(0.8, 0.6, 0.2),
+            custom_size: Some(Vec2::new(80.0, 80.0)),
             ..Default::default()
         };
+        let top_sand_transform = Transform::from_translation(Vec3::new(0.0, 50.0, 0.1));
         
-        let bottom_sand_sprite = SpriteBundle {
-            sprite: Sprite {
-                color: Color::srgb(0.8, 0.6, 0.2),
-                custom_size: Some(Vec2::new(80.0, 0.0)), // Initially empty
-                ..Default::default()
-            },
-            transform: Transform::from_translation(Vec3::new(0.0, -50.0, 0.1)),
+        let bottom_sand = Sprite {
+            color: Color::srgb(0.8, 0.6, 0.2),
+            custom_size: Some(Vec2::new(80.0, 0.0)), // Initially empty
             ..Default::default()
         };
+        let bottom_sand_transform = Transform::from_translation(Vec3::new(0.0, -50.0, 0.1));
         
         Self {
             hourglass: SpriteHourglass::default(),
-            container_sprite,
-            top_sand_sprite,
-            bottom_sand_sprite,
+            container_sprite: ContainerSprite,
+            container,
+            container_transform,
+            top_sand_sprite: TopSandSprite,
+            top_sand,
+            top_sand_transform,
+            bottom_sand_sprite: BottomSandSprite,
+            bottom_sand,
+            bottom_sand_transform,
         }
     }
 }
@@ -79,15 +105,15 @@ impl SpriteHourglassBundle {
     
     /// Set the container color
     pub fn with_container_color(mut self, color: Color) -> Self {
-        self.container_sprite.sprite.color = color;
+        self.container.color = color;
         self.hourglass.container.color = color;
         self
     }
     
     /// Set the sand color
     pub fn with_sand_color(mut self, color: Color) -> Self {
-        self.top_sand_sprite.sprite.color = color;
-        self.bottom_sand_sprite.sprite.color = color;
+        self.top_sand.color = color;
+        self.bottom_sand.color = color;
         self.hourglass.sand.color = color;
         self
     }
@@ -95,19 +121,19 @@ impl SpriteHourglassBundle {
     /// Set the size of the hourglass
     pub fn with_size(mut self, size: Vec2) -> Self {
         // Update container size
-        self.container_sprite.sprite.custom_size = Some(size);
+        self.container.custom_size = Some(size);
         self.hourglass.container.size = size;
         
         // Update sand size (80% of container width)
         let sand_width = size.x * 0.8;
         let sand_height = size.y * 0.4; // 40% of container height for each chamber
         
-        self.top_sand_sprite.sprite.custom_size = Some(Vec2::new(sand_width, sand_height));
-        self.bottom_sand_sprite.sprite.custom_size = Some(Vec2::new(sand_width, 0.0)); // Initially empty
+        self.top_sand.custom_size = Some(Vec2::new(sand_width, sand_height));
+        self.bottom_sand.custom_size = Some(Vec2::new(sand_width, 0.0)); // Initially empty
         
         // Update positions
-        self.top_sand_sprite.transform.translation.y = size.y * 0.25;
-        self.bottom_sand_sprite.transform.translation.y = -size.y * 0.25;
+        self.top_sand_transform.translation.y = size.y * 0.25;
+        self.bottom_sand_transform.translation.y = -size.y * 0.25;
         
         self
     }
@@ -140,11 +166,45 @@ pub fn spawn_sprite_hourglass(
     container_color: Color,
     sand_color: Color,
 ) -> Entity {
-    commands
-        .spawn(SpriteHourglassBundle::new(duration)
-            .with_size(size)
-            .with_container_color(container_color)
-            .with_sand_color(sand_color))
-        .insert(Transform::from_translation(Vec3::new(position.x, position.y, 0.0)))
-        .id()
+    let bundle = SpriteHourglassBundle::new(duration)
+        .with_size(size)
+        .with_container_color(container_color)
+        .with_sand_color(sand_color);
+    
+    // Create the main entity with the hourglass component and transform
+    let entity = commands
+        .spawn((
+            bundle.hourglass.clone(),
+            Transform::from_translation(Vec3::new(position.x, position.y, 0.0)),
+        ))
+        .id();
+    
+    // Add container as a child entity
+    commands.entity(entity).with_children(|parent| {
+        parent.spawn((
+            bundle.container_sprite,
+            bundle.container,
+            bundle.container_transform,
+        ));
+    });
+    
+    // Add top sand as a child entity
+    commands.entity(entity).with_children(|parent| {
+        parent.spawn((
+            bundle.top_sand_sprite,
+            bundle.top_sand,
+            bundle.top_sand_transform,
+        ));
+    });
+    
+    // Add bottom sand as a child entity
+    commands.entity(entity).with_children(|parent| {
+        parent.spawn((
+            bundle.bottom_sand_sprite,
+            bundle.bottom_sand,
+            bundle.bottom_sand_transform,
+        ));
+    });
+    
+    entity
 }

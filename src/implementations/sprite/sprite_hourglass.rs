@@ -3,11 +3,12 @@
 use bevy::prelude::*;
 use std::time::Duration;
 
-use crate::traits::{Hourglass, FlipBehavior, FlipStatus, Sand, Container};
+use crate::{traits::{Container, FlipBehavior, FlipStatus, Hourglass, Sand}, HourglassComponent};
 use super::{SpriteSand, SpriteContainer};
 
 /// A sprite-based implementation of an hourglass
 #[derive(Component, Debug, Clone)]
+#[require(HourglassComponent)]
 pub struct SpriteHourglass {
     /// The sand component
     pub sand: SpriteSand,
