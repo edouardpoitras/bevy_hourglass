@@ -1,13 +1,13 @@
 //! Systems for updating hourglass state.
 
 use bevy::prelude::*;
-use crate::components::HourglassComponent;
+use crate::components::Hourglass;
 use crate::events::HourglassEmptyEvent;
 
 /// System that updates all hourglasses
 pub fn update_hourglasses(
     time: Res<Time>,
-    mut hourglasses: Query<(Entity, &mut HourglassComponent)>,
+    mut hourglasses: Query<(Entity, &mut Hourglass)>,
     mut empty_events: EventWriter<HourglassEmptyEvent>,
 ) {
     let delta = time.delta();

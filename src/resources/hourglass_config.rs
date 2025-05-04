@@ -1,7 +1,7 @@
 //! Defines the global configuration resource for the hourglass plugin.
 
 use bevy::prelude::*;
-use crate::traits::EasingFunction;
+use crate::components::EasingFunction;
 
 /// Global configuration for the hourglass plugin
 #[derive(Resource, Debug, Clone)]

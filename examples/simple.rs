@@ -2,7 +2,6 @@
 
 use bevy::prelude::*;
 use bevy_hourglass::*;
-use bevy_hourglass::implementations::sprite::*;
 use std::time::Duration;
 
 fn main() {
@@ -57,7 +56,7 @@ fn setup(mut commands: Commands) {
     });
     
     // Spawn a sprite-based hourglass using the helper function
-    let hourglass_entity = spawn_sprite_hourglass(
+    let hourglass_entity = spawn_hourglass(
         &mut commands,
         Duration::from_secs(60),
         Vec2::ZERO,
@@ -91,7 +90,7 @@ fn setup(mut commands: Commands) {
 /// Handle keyboard input to flip the hourglass
 fn handle_keyboard_input(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut hourglasses: Query<&mut SpriteHourglass, With<MainHourglass>>,
+    mut hourglasses: Query<&mut Hourglass, With<MainHourglass>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         if let Ok(mut hourglass) = hourglasses.single_mut() {
@@ -103,7 +102,7 @@ fn handle_keyboard_input(
 
 /// Update the UI text with hourglass information
 fn update_ui(
-    hourglasses: Query<&SpriteHourglass, With<MainHourglass>>,
+    hourglasses: Query<&Hourglass, With<MainHourglass>>,
     mut text_query: Query<&mut Text, With<HourglassInfoText>>,
 ) {
     if let (Ok(hourglass), Ok(mut text)) = (hourglasses.single(), text_query.single_mut()) {

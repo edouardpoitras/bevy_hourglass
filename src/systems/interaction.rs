@@ -1,7 +1,7 @@
 //! Systems for handling user interaction with hourglasses.
 
 use bevy::prelude::*;
-use crate::components::{HourglassComponent, RotationState, InteractableHourglass};
+use crate::components::{Hourglass, InteractableHourglass};
 use crate::events::HourglassInteractionEvent;
 use crate::events::InteractionType;
 
@@ -9,8 +9,7 @@ use crate::events::InteractionType;
 pub fn handle_hourglass_interaction(
     mut hourglasses: Query<(
         Entity,
-        &mut HourglassComponent,
-        &mut RotationState,
+        &mut Hourglass,
         &mut InteractableHourglass,
         &GlobalTransform,
     )>,
@@ -32,10 +31,10 @@ pub fn handle_hourglass_interaction(
         // Convert cursor position to world coordinates
         let cursor_world_position = cursor_to_world(camera, camera_transform, cursor_position);
         
-        for (entity, mut hourglass, mut rotation, mut interactable, transform) in hourglasses.iter_mut() {
+        for (entity, mut hourglass, mut interactable, transform) in hourglasses.iter_mut() {
             // Check if the cursor is over the hourglass
             let hourglass_position = transform.translation().truncate();
-            let hourglass_size = Vec2::new(100.0, 200.0); // TODO: Get actual size from container
+            let hourglass_size = hourglass.size;
             
             let is_hovering = is_point_in_rect(
                 cursor_world_position,
@@ -77,7 +76,7 @@ pub fn handle_hourglass_interaction(
                         });
                     } else {
                         // For normal flipping, just start the flip animation
-                        hourglass.start_flip();
+                        hourglass.flip();
                     }
                 }
             }
@@ -95,7 +94,7 @@ pub fn handle_hourglass_interaction(
                 let clamped_angle = target_angle.clamp(interactable.min_angle, interactable.max_angle);
                 
                 // Apply the rotation directly
-                rotation.current_rotation = clamped_angle;
+                hourglass.current_rotation = clamped_angle;
                 
                 // Send drag event
                 interaction_events.write(HourglassInteractionEvent {
@@ -109,7 +108,7 @@ pub fn handle_hourglass_interaction(
                 
                 if snap_to_min || snap_to_max {
                     // Snap to the extreme
-                    rotation.current_rotation = if snap_to_min {
+                    hourglass.current_rotation = if snap_to_min {
                         interactable.min_angle
                     } else {
                         interactable.max_angle
@@ -118,7 +117,7 @@ pub fn handle_hourglass_interaction(
                     // Update the hourglass flipped state based on which extreme we snapped to
                     let new_flipped = snap_to_min;
                     if hourglass.flipped != new_flipped {
-                        hourglass.flip();
+                        hourglass.flipped = new_flipped;
                     }
                 }
             }
