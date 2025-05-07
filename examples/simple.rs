@@ -58,7 +58,7 @@ fn setup(mut commands: Commands) {
     // Spawn a sprite-based hourglass using the helper function
     let hourglass_entity = spawn_hourglass(
         &mut commands,
-        Duration::from_secs(60),
+        Duration::from_secs(10),
         Vec2::ZERO,
         Vec2::new(100.0, 200.0),
         Color::srgb(0.8, 0.8, 0.8),

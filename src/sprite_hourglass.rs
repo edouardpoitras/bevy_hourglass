@@ -105,8 +105,19 @@ pub fn update_sand_sprites(
                     // Create a new sprite with the updated size
                     *sprite = Sprite::from_color(sprite.color, Vec2::new(sand_width, height));
                     
-                    // Update transform to keep the sand at the top
-                    transform.translation.y = hourglass.size.y * 0.25 - (max_height - height) * 0.5;
+                    // Position depends on whether this is actually the top or bottom chamber
+                    if !hourglass.flipped {
+                        // This is the actual top chamber
+                        // Update transform to keep the sand anchored at the top of the chamber
+                        // The bottom of the top chamber should remain fixed
+                        // Only the height of the sprite should change as sand drains
+                        transform.translation.y = hourglass.size.y * 0.25 - (max_height - height) * 0.5;
+                    } else {
+                        // This is actually the bottom chamber (visually at the top due to flipping)
+                        // Update transform to keep the sand anchored at the very bottom of the hourglass
+                        // As sand fills, the sprite should grow upward from the bottom
+                        transform.translation.y = hourglass.size.y * 0.25 - (max_height - height);
+                    }
                 }
                 
                 // Update bottom sand sprite (visual bottom, which could be either chamber)
@@ -118,8 +129,19 @@ pub fn update_sand_sprites(
                     // Create a new sprite with the updated size
                     *sprite = Sprite::from_color(sprite.color, Vec2::new(sand_width, height));
                     
-                    // Update transform to keep the sand at the bottom
-                    transform.translation.y = -hourglass.size.y * 0.25 + height * 0.5;
+                    // Position depends on whether this is actually the bottom or top chamber
+                    if !hourglass.flipped {
+                        // This is the actual bottom chamber
+                        // Update transform to keep the sand anchored at the very bottom of the hourglass
+                        // As sand fills, the sprite should grow upward from the bottom
+                        // The origin of the sprite is at its center, so we need to offset by half its height
+                        transform.translation.y = -hourglass.size.y * 0.45 + height * 0.5;
+                    } else {
+                        // This is actually the top chamber (visually at the bottom due to flipping)
+                        // Update transform to keep the sand anchored at the top of the chamber
+                        // Only the height of the sprite should change as sand drains
+                        transform.translation.y = -hourglass.size.y * 0.25 - (max_height - height) * 0.5;
+                    }
                 }
             }
         }
