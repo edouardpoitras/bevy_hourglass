@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use std::time::Duration;
 
-use crate::components::{Hourglass, InteractableHourglass, EasingFunction};
+use crate::components::{Hourglass, InteractableHourglass};
 
 /// Bundle for creating a basic hourglass
 #[derive(Bundle, Clone)]
@@ -51,23 +51,6 @@ impl HourglassBundle {
         self
     }
     
-    /// Set the easing function for the flip animation
-    pub fn with_easing(mut self, easing: EasingFunction) -> Self {
-        self.hourglass.easing = easing;
-        self
-    }
-    
-    /// Set the flip duration for the rotation animation
-    pub fn with_flip_duration(mut self, duration: f32) -> Self {
-        self.hourglass.flip_duration = duration;
-        self
-    }
-    
-    /// Set whether to update the sand while flipping
-    pub fn with_update_during_flip(mut self, update: bool) -> Self {
-        self.hourglass.update_during_flip = update;
-        self
-    }
 }
 
 /// Bundle for creating an interactable hourglass
@@ -98,13 +81,6 @@ impl InteractableHourglassBundle {
         }
     }
     
-    /// Create a new interactable hourglass with mouse following enabled
-    pub fn with_mouse_following(duration: Duration) -> Self {
-        Self {
-            hourglass_bundle: HourglassBundle::new(duration),
-            interactable: InteractableHourglass::with_mouse_following(),
-        }
-    }
     
     /// Set the container color
     pub fn with_container_color(mut self, color: Color) -> Self {
@@ -124,15 +100,4 @@ impl InteractableHourglassBundle {
         self
     }
     
-    /// Set the easing function for the flip animation
-    pub fn with_easing(mut self, easing: EasingFunction) -> Self {
-        self.hourglass_bundle = self.hourglass_bundle.with_easing(easing);
-        self
-    }
-    
-    /// Set the flip duration for the rotation animation
-    pub fn with_flip_duration(mut self, duration: f32) -> Self {
-        self.hourglass_bundle = self.hourglass_bundle.with_flip_duration(duration);
-        self
-    }
 }

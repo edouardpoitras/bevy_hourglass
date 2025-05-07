@@ -59,7 +59,7 @@ pub fn handle_hourglass_interaction(
             // Update interaction state
             interactable.is_interacting = is_hovering;
             
-            // Handle mouse clicks
+            // Handle mouse clicks - simplified to just flip the hourglass on click
             if is_hovering && mouse_input.just_pressed(MouseButton::Left) {
                 interaction_events.write(HourglassInteractionEvent {
                     entity,
@@ -68,66 +68,9 @@ pub fn handle_hourglass_interaction(
                 
                 // If the hourglass can be flipped, start flipping
                 if interactable.can_flip && !hourglass.flipping {
-                    if interactable.mouse_follow {
-                        // For mouse following, we'll update the rotation in the drag system
-                        interaction_events.write(HourglassInteractionEvent {
-                            entity,
-                            interaction_type: InteractionType::DragStart,
-                        });
-                    } else {
-                        // For normal flipping, just start the flip animation
-                        hourglass.flip();
-                    }
+                    // For this simplified version, we always flip the hourglass directly
+                    hourglass.flip();
                 }
-            }
-            
-            // Handle mouse following for rotation
-            if interactable.mouse_follow && interactable.is_interacting && mouse_input.pressed(MouseButton::Left) {
-                // Calculate angle between hourglass and cursor
-                let hourglass_to_cursor = cursor_world_position - hourglass_position;
-                let angle = hourglass_to_cursor.y.atan2(hourglass_to_cursor.x);
-                
-                // Apply sensitivity
-                let target_angle = angle * interactable.mouse_sensitivity;
-                
-                // Clamp to min/max angles
-                let clamped_angle = target_angle.clamp(interactable.min_angle, interactable.max_angle);
-                
-                // Apply the rotation directly
-                hourglass.current_rotation = clamped_angle;
-                
-                // Send drag event
-                interaction_events.write(HourglassInteractionEvent {
-                    entity,
-                    interaction_type: InteractionType::Drag,
-                });
-                
-                // Check if we should snap to an extreme
-                let snap_to_min = (clamped_angle - interactable.min_angle).abs() < interactable.snap_threshold;
-                let snap_to_max = (clamped_angle - interactable.max_angle).abs() < interactable.snap_threshold;
-                
-                if snap_to_min || snap_to_max {
-                    // Snap to the extreme
-                    hourglass.current_rotation = if snap_to_min {
-                        interactable.min_angle
-                    } else {
-                        interactable.max_angle
-                    };
-                    
-                    // Update the hourglass flipped state based on which extreme we snapped to
-                    let new_flipped = snap_to_min;
-                    if hourglass.flipped != new_flipped {
-                        hourglass.flipped = new_flipped;
-                    }
-                }
-            }
-            
-            // Handle mouse release
-            if interactable.mouse_follow && mouse_input.just_released(MouseButton::Left) {
-                interaction_events.write(HourglassInteractionEvent {
-                    entity,
-                    interaction_type: InteractionType::DragEnd,
-                });
             }
         }
     }
