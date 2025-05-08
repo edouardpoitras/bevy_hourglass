@@ -26,17 +26,15 @@ pub fn spawn_hourglass(
     container_color: Color,
     sand_color: Color,
 ) -> Entity {
-    // Create the hourglass component
-    let hourglass = Hourglass {
-        total_time: duration,
-        remaining_time: duration,
-        size,
-        container_color,
-        sand_color,
-        upper_chamber: 1.0,
-        lower_chamber: 0.0,
-        ..Default::default()
-    };
+    // Create the hourglass component using the new method to ensure proper flow rate calculation
+    let mut hourglass = Hourglass::new(duration);
+    
+    // Set additional properties
+    hourglass.size = size;
+    hourglass.container_color = container_color;
+    hourglass.sand_color = sand_color;
+    hourglass.upper_chamber = 1.0;
+    hourglass.lower_chamber = 0.0;
     
     // Create the main entity with the hourglass component and transform
     let entity = commands

@@ -70,9 +70,19 @@ impl Default for Hourglass {
 impl Hourglass {
     /// Create a new hourglass with the specified total time
     pub fn new(total_time: Duration) -> Self {
+        // Calculate flow rate based on total time
+        // Flow rate should be 1.0 / total_time_in_seconds
+        // This ensures the hourglass empties exactly when the time is up
+        let flow_rate = if total_time.as_secs_f32() > 0.0 {
+            1.0 / total_time.as_secs_f32()
+        } else {
+            0.02 // Default to 2% per second if total_time is zero
+        };
+        
         Self {
             total_time,
             remaining_time: total_time,
+            flow_rate,
             ..Default::default()
         }
     }
