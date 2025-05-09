@@ -74,27 +74,38 @@ pub fn spawn_hourglass(
     entity
 }
 
-/// System to update the sand sprites based on the hourglass state
-pub fn update_sand_sprites(
+/// System to update the container sprite rotation
+pub fn update_container_sprite(
     hourglass_query: Query<(Entity, &Hourglass)>,
-    mut top_sand_query: Query<(&mut Sprite, &mut Transform), (With<TopSandSprite>, Without<BottomSandSprite>)>,
-    mut bottom_sand_query: Query<(&mut Sprite, &mut Transform), (With<BottomSandSprite>, Without<TopSandSprite>)>,
+    mut container_query: Query<&mut Transform, With<ContainerSprite>>,
     children_query: Query<&Children>,
 ) {
     for (entity, hourglass) in hourglass_query.iter() {
         // Get the children of the hourglass entity
         if let Ok(children) = children_query.get(entity) {
-            // The visuals need to adjust depending on orientation
-            // When flipped, the "top" visual becomes the lower chamber
-            let (upper_fill, lower_fill) = if !hourglass.flipped {
-                (hourglass.upper_chamber, hourglass.lower_chamber)
-            } else {
-                (hourglass.lower_chamber, hourglass.upper_chamber)
-            };
-            
-            // Find the top and bottom sand sprites
+            // Apply rotation to the container sprite
             for child in children.iter() {
-                // Update top sand sprite (visual top, which could be either chamber)
+                if let Ok(mut transform) = container_query.get_mut(child) {
+                    transform.rotation = Quat::from_rotation_z(hourglass.current_rotation);
+                }
+            }
+        }
+    }
+}
+
+/// System to update the top sand sprite
+pub fn update_top_sand_sprite(
+    hourglass_query: Query<(Entity, &Hourglass)>,
+    mut top_sand_query: Query<(&mut Sprite, &mut Transform), With<TopSandSprite>>,
+    children_query: Query<&Children>,
+) {
+    for (entity, hourglass) in hourglass_query.iter() {
+        // Get the children of the hourglass entity
+        if let Ok(children) = children_query.get(entity) {
+            let upper_fill = hourglass.upper_chamber;
+            
+            // Find the top sand sprite
+            for child in children.iter() {
                 if let Ok((mut sprite, mut transform)) = top_sand_query.get_mut(child) {
                     let sand_width = hourglass.size.x * 0.8;
                     let max_height = hourglass.size.y * 0.4;
@@ -103,22 +114,33 @@ pub fn update_sand_sprites(
                     // Create a new sprite with the updated size
                     *sprite = Sprite::from_color(sprite.color, Vec2::new(sand_width, height));
                     
-                    // Position depends on whether this is actually the top or bottom chamber
-                    if !hourglass.flipped {
-                        // This is the actual top chamber
-                        // Update transform to keep the sand anchored at the top of the chamber
-                        // The bottom of the top chamber should remain fixed
-                        // Only the height of the sprite should change as sand drains
-                        transform.translation.y = hourglass.size.y * 0.25 - (max_height - height) * 0.5;
-                    } else {
-                        // This is actually the bottom chamber (visually at the top due to flipping)
-                        // Update transform to keep the sand anchored at the very bottom of the hourglass
-                        // As sand fills, the sprite should grow upward from the bottom
-                        transform.translation.y = hourglass.size.y * 0.25 - (max_height - height);
-                    }
+                    // Apply rotation to match the hourglass orientation
+                    transform.rotation = Quat::from_rotation_z(hourglass.current_rotation);
+                    
+                    // Position the sand based on the chamber fill
+                    // When not flipped, this is at the top of the hourglass
+                    // When flipped, this is at the bottom of the hourglass (but visually at the top due to rotation)
+                    let base_y = hourglass.size.y * 0.25;
+                    transform.translation.y = base_y - (max_height - height) * 0.5;
                 }
-                
-                // Update bottom sand sprite (visual bottom, which could be either chamber)
+            }
+        }
+    }
+}
+
+/// System to update the bottom sand sprite
+pub fn update_bottom_sand_sprite(
+    hourglass_query: Query<(Entity, &Hourglass)>,
+    mut bottom_sand_query: Query<(&mut Sprite, &mut Transform), With<BottomSandSprite>>,
+    children_query: Query<&Children>,
+) {
+    for (entity, hourglass) in hourglass_query.iter() {
+        // Get the children of the hourglass entity
+        if let Ok(children) = children_query.get(entity) {
+            let lower_fill = hourglass.lower_chamber;
+            
+            // Find the bottom sand sprite
+            for child in children.iter() {
                 if let Ok((mut sprite, mut transform)) = bottom_sand_query.get_mut(child) {
                     let sand_width = hourglass.size.x * 0.8;
                     let max_height = hourglass.size.y * 0.4;
@@ -127,19 +149,14 @@ pub fn update_sand_sprites(
                     // Create a new sprite with the updated size
                     *sprite = Sprite::from_color(sprite.color, Vec2::new(sand_width, height));
                     
-                    // Position depends on whether this is actually the bottom or top chamber
-                    if !hourglass.flipped {
-                        // This is the actual bottom chamber
-                        // Update transform to keep the sand anchored at the very bottom of the hourglass
-                        // As sand fills, the sprite should grow upward from the bottom
-                        // The origin of the sprite is at its center, so we need to offset by half its height
-                        transform.translation.y = -hourglass.size.y * 0.45 + height * 0.5;
-                    } else {
-                        // This is actually the top chamber (visually at the bottom due to flipping)
-                        // Update transform to keep the sand anchored at the top of the chamber
-                        // Only the height of the sprite should change as sand drains
-                        transform.translation.y = -hourglass.size.y * 0.25 - (max_height - height) * 0.5;
-                    }
+                    // Apply rotation to match the hourglass orientation
+                    transform.rotation = Quat::from_rotation_z(hourglass.current_rotation);
+                    
+                    // Position the sand based on the chamber fill
+                    // When not flipped, this is at the bottom of the hourglass
+                    // When flipped, this is at the top of the hourglass (but visually at the bottom due to rotation)
+                    let base_y = -hourglass.size.y * 0.45;
+                    transform.translation.y = base_y + height * 0.5;
                 }
             }
         }

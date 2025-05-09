@@ -95,19 +95,13 @@ impl Hourglass {
             self.update_sand(delta);
             
             // Update remaining time based on sand in the upper chamber
-            // regardless of hourglass orientation
-            let active_chamber = if self.flipped {
-                self.lower_chamber
-            } else {
-                self.upper_chamber
-            };
-            
+            // Since we swap chambers when flipping, upper is always physically at the top
             self.remaining_time = Duration::from_secs_f32(
-                active_chamber * self.total_time.as_secs_f32()
+                self.upper_chamber * self.total_time.as_secs_f32()
             );
             
             // Check if the hourglass is empty
-            if active_chamber <= 0.0 {
+            if self.upper_chamber <= 0.0 {
                 self.running = false;
             }
         }
@@ -119,19 +113,22 @@ impl Hourglass {
             
             // Update the rotation based on flipped state
             self.current_rotation = if self.flipped {
-                std::f32::consts::PI // 180 degrees
+                //std::f32::consts::PI // 180 degrees
+                0.0
             } else {
                 0.0
             };
             
-            // Reset the timer if it's empty
-            if self.remaining_time.is_zero() {
-                self.remaining_time = self.total_time;
+            // Invert the timer (if 2s left in a 10s timer, it should read 8s after flipping)
+            self.remaining_time = self.total_time - self.remaining_time;
+            
+            // Swap chambers when flipped - this ensures upper is always physically at the top
+            std::mem::swap(&mut self.upper_chamber, &mut self.lower_chamber);
+            
+            // Always ensure the timer is running if there's sand in the upper chamber
+            if !self.running && self.upper_chamber > 0.0 {
                 self.running = true;
             }
-            
-            // Swap chambers when flipped
-            std::mem::swap(&mut self.upper_chamber, &mut self.lower_chamber);
         }
     }
     
@@ -140,7 +137,8 @@ impl Hourglass {
         // Calculate the amount to transfer based on flow rate and delta time
         let transfer_amount = self.flow_rate * delta.as_secs_f32();
         
-        // Sand always flows from upper to lower chamber, regardless of orientation
+        // Sand always flows from upper to lower chamber (gravity pulls down)
+        // Since we swap chambers when flipping, upper is always physically at the top
         let actual_transfer = transfer_amount.min(self.upper_chamber);
         self.upper_chamber -= actual_transfer;
         self.lower_chamber += actual_transfer;
