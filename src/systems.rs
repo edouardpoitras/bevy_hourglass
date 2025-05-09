@@ -2,7 +2,7 @@
 
 use bevy::prelude::*;
 use crate::components::Hourglass;
-use crate::events::{HourglassEmptyEvent, HourglassFlipStartEvent, HourglassFlipCompleteEvent};
+use crate::events::{HourglassEmptyEvent, HourglassFlipStartEvent};
 
 /// System that updates all hourglasses
 pub fn update_hourglasses(
@@ -10,7 +10,6 @@ pub fn update_hourglasses(
     mut query: Query<(Entity, &mut Hourglass, &mut Transform)>,
     mut empty_events: EventWriter<HourglassEmptyEvent>,
     mut flip_start_events: EventWriter<HourglassFlipStartEvent>,
-    mut flip_complete_events: EventWriter<HourglassFlipCompleteEvent>,
 ) {
     let delta = time.delta();
     
@@ -22,24 +21,10 @@ pub fn update_hourglasses(
         if hourglass.flipping {
             // Send flip start event
             flip_start_events.write(HourglassFlipStartEvent { entity });
-            
-            // The flip will be completed immediately in our simplified model
-            let was_flipping = true;
-            
-            // Update the hourglass
-            hourglass.update(delta);
-            
-            // If the flip just completed, send the event
-            if was_flipping && !hourglass.flipping {
-                flip_complete_events.write(HourglassFlipCompleteEvent {
-                    entity,
-                    is_flipped: hourglass.flipped,
-                });
-            }
-        } else {
-            // Normal update
-            hourglass.update(delta);
         }
+            
+        // Normal update
+        hourglass.update(delta);
         
         // Apply the rotation to the transform
         transform.rotation = Quat::from_rotation_z(hourglass.current_rotation);

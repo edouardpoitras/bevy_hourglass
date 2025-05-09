@@ -62,7 +62,7 @@ impl Default for Hourglass {
             // Sand properties
             upper_chamber: 1.0,
             lower_chamber: 0.0,
-            flow_rate: 0.02, // 2% per second
+            flow_rate: 1.0 / 60.0,
         }
     }
 }
@@ -76,7 +76,7 @@ impl Hourglass {
         let flow_rate = if total_time.as_secs_f32() > 0.0 {
             1.0 / total_time.as_secs_f32()
         } else {
-            0.02 // Default to 2% per second if total_time is zero
+            1.0 / 60.0 // Default to 60s if total_time is zero
         };
         
         Self {

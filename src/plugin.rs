@@ -17,9 +17,7 @@ impl Plugin for HourglassPlugin {
         
         // Register events
         app.add_event::<HourglassFlipStartEvent>()
-           .add_event::<HourglassFlipCompleteEvent>()
-           .add_event::<HourglassEmptyEvent>()
-           .add_event::<HourglassInteractionEvent>();
+           .add_event::<HourglassEmptyEvent>();
         
         // Add systems - note that update_rotations was removed as it's now part of update_hourglasses
         app.add_systems(Update, (
