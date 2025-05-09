@@ -106,16 +106,16 @@ fn update_ui(
     mut text_query: Query<&mut Text, With<HourglassInfoText>>,
 ) {
     if let (Ok(hourglass), Ok(mut text)) = (hourglasses.single(), text_query.single_mut()) {
-        let remaining_secs = hourglass.get_time_remaining().as_secs();
-        let status = if hourglass.is_flipping() {
+        let remaining_secs = hourglass.remaining_time.as_secs();
+        let status = if hourglass.flipping {
             "Flipping"
-        } else if hourglass.is_flipped() {
+        } else if hourglass.flipped {
             "Flipped"
         } else {
             "Upright"
         };
         
-        let running = if hourglass.is_running() { "Running" } else { "Stopped" };
+        let running = if hourglass.running { "Running" } else { "Stopped" };
         
         text.0 = format!(
             "Hourglass: {}s remaining | Status: {} | {}",

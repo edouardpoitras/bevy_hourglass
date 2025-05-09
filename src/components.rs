@@ -111,14 +111,6 @@ impl Hourglass {
             self.flipping = false;
             self.flipped = !self.flipped;
             
-            // Update the rotation based on flipped state
-            self.current_rotation = if self.flipped {
-                //std::f32::consts::PI // 180 degrees
-                0.0
-            } else {
-                0.0
-            };
-            
             // Invert the timer (if 2s left in a 10s timer, it should read 8s after flipping)
             self.remaining_time = self.total_time - self.remaining_time;
             
@@ -153,50 +145,5 @@ impl Hourglass {
         if !self.flipping {
             self.flipping = true;
         }
-    }
-    
-    /// Get the fill percentage (0.0 - 1.0)
-    pub fn get_fill_percentage(&self) -> f32 {
-        self.remaining_time.as_secs_f32() / self.total_time.as_secs_f32()
-    }
-    
-    /// Get the time remaining in the hourglass
-    pub fn get_time_remaining(&self) -> Duration {
-        self.remaining_time
-    }
-    
-    /// Get the total time the hourglass can measure
-    pub fn get_total_time(&self) -> Duration {
-        self.total_time
-    }
-    
-    /// Check if the hourglass is currently running
-    pub fn is_running(&self) -> bool {
-        self.running
-    }
-    
-    /// Check if the hourglass is currently flipped (upside down)
-    pub fn is_flipped(&self) -> bool {
-        self.flipped
-    }
-    
-    /// Check if the hourglass is currently in the process of flipping
-    pub fn is_flipping(&self) -> bool {
-        self.flipping
-    }
-    
-    /// Get the current rotation of the hourglass
-    pub fn get_rotation(&self) -> f32 {
-        self.current_rotation
-    }
-    
-    /// Get the upper chamber fill percentage (0.0 - 1.0)
-    pub fn get_upper_fill_percentage(&self) -> f32 {
-        self.upper_chamber
-    }
-    
-    /// Get the lower chamber fill percentage (0.0 - 1.0)
-    pub fn get_lower_fill_percentage(&self) -> f32 {
-        self.lower_chamber
     }
 }

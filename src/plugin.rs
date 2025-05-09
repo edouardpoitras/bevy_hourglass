@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use crate::resources::HourglassConfig;
 use crate::events::*;
-use crate::systems::*;
+use crate::systems::update_hourglasses;
 use crate::sprite_hourglass::{update_container_sprite, update_top_sand_sprite, update_bottom_sand_sprite};
 
 /// Plugin for adding hourglass functionality to Bevy apps
@@ -24,7 +24,6 @@ impl Plugin for HourglassPlugin {
         // Add systems - note that update_rotations was removed as it's now part of update_hourglasses
         app.add_systems(Update, (
             update_hourglasses,
-            handle_hourglass_interaction,
             update_container_sprite,
             update_top_sand_sprite,
             update_bottom_sand_sprite,
