@@ -66,7 +66,7 @@ Add the dependency to your Cargo.toml:
 
 ```toml
 [dependencies]
-bevy_hourglass = "0.2.0"
+bevy_hourglass = "0.1.0"
 ```
 
 In your Bevy application:
@@ -98,6 +98,12 @@ fn setup(mut commands: Commands) {
     );
 }
 ```
+
+## Bevy Compatibility
+
+|bevy|bevy_hourglass|
+|---|---|
+|0.16|0.1|
 
 ## License
 
