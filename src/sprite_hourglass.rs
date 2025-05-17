@@ -28,14 +28,14 @@ pub fn spawn_hourglass(
 ) -> Entity {
     // Create the hourglass component using the new method to ensure proper flow rate calculation
     let mut hourglass = Hourglass::new(duration);
-    
+
     // Set additional properties
     hourglass.size = size;
     hourglass.container_color = container_color;
     hourglass.sand_color = sand_color;
     hourglass.upper_chamber = 1.0;
     hourglass.lower_chamber = 0.0;
-    
+
     // Create the main entity with the hourglass component and transform
     let entity = commands
         .spawn((
@@ -43,7 +43,7 @@ pub fn spawn_hourglass(
             Transform::from_translation(Vec3::new(position.x, position.y, 0.0)),
         ))
         .id();
-    
+
     // Add container as a child entity
     commands.entity(entity).with_children(|parent| {
         parent.spawn((
@@ -52,7 +52,7 @@ pub fn spawn_hourglass(
             Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
         ));
     });
-    
+
     // Add top sand as a child entity
     commands.entity(entity).with_children(|parent| {
         parent.spawn((
@@ -61,7 +61,7 @@ pub fn spawn_hourglass(
             Transform::from_translation(Vec3::new(0.0, size.y * 0.25, 0.1)),
         ));
     });
-    
+
     // Add bottom sand as a child entity
     commands.entity(entity).with_children(|parent| {
         parent.spawn((
@@ -70,7 +70,7 @@ pub fn spawn_hourglass(
             Transform::from_translation(Vec3::new(0.0, -size.y * 0.25, 0.1)),
         ));
     });
-    
+
     entity
 }
 
@@ -103,20 +103,20 @@ pub fn update_top_sand_sprite(
         // Get the children of the hourglass entity
         if let Ok(children) = children_query.get(entity) {
             let upper_fill = hourglass.upper_chamber;
-            
+
             // Find the top sand sprite
             for child in children.iter() {
                 if let Ok((mut sprite, mut transform)) = top_sand_query.get_mut(child) {
                     let sand_width = hourglass.size.x * 0.8;
                     let max_height = hourglass.size.y * 0.4;
                     let height = max_height * upper_fill;
-                    
+
                     // Create a new sprite with the updated size
                     *sprite = Sprite::from_color(sprite.color, Vec2::new(sand_width, height));
-                    
+
                     // Apply rotation to match the hourglass orientation
                     transform.rotation = Quat::from_rotation_z(hourglass.current_rotation);
-                    
+
                     // Position the sand based on the chamber fill
                     // When not flipped, this is at the top of the hourglass
                     // When flipped, this is at the bottom of the hourglass (but visually at the top due to rotation)
@@ -138,20 +138,20 @@ pub fn update_bottom_sand_sprite(
         // Get the children of the hourglass entity
         if let Ok(children) = children_query.get(entity) {
             let lower_fill = hourglass.lower_chamber;
-            
+
             // Find the bottom sand sprite
             for child in children.iter() {
                 if let Ok((mut sprite, mut transform)) = bottom_sand_query.get_mut(child) {
                     let sand_width = hourglass.size.x * 0.8;
                     let max_height = hourglass.size.y * 0.4;
                     let height = max_height * lower_fill;
-                    
+
                     // Create a new sprite with the updated size
                     *sprite = Sprite::from_color(sprite.color, Vec2::new(sand_width, height));
-                    
+
                     // Apply rotation to match the hourglass orientation
                     transform.rotation = Quat::from_rotation_z(hourglass.current_rotation);
-                    
+
                     // Position the sand based on the chamber fill
                     // When not flipped, this is at the bottom of the hourglass
                     // When flipped, this is at the top of the hourglass (but visually at the bottom due to rotation)

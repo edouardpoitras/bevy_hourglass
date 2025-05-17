@@ -17,7 +17,7 @@ fn main() {
         // For native builds, just run the app
         run();
     }
-    
+
     // For WASM builds, main is not the entry point, but needs to exist for the example
     #[cfg(target_arch = "wasm32")]
     {
@@ -32,10 +32,10 @@ fn main() {
 pub fn start() -> Result<(), JsValue> {
     // Redirect panic messages to the browser console
     console_error_panic_hook::set_once();
-    
+
     // Start the Bevy app
     run();
-    
+
     Ok(())
 }
 
@@ -44,10 +44,7 @@ fn run() {
     App::new()
         .add_plugins((DefaultPlugins, HourglassPlugin))
         .add_systems(Startup, setup)
-        .add_systems(Update, (
-            handle_input,
-            update_ui,
-        ))
+        .add_systems(Update, (handle_input, update_ui))
         .run();
 }
 
@@ -63,34 +60,34 @@ struct MainHourglass;
 fn setup(mut commands: Commands) {
     // Add a 2D camera
     commands.spawn(Camera2d::default());
-    
+
     // Add UI node and text
-    commands.spawn((
-        Node {
+    commands
+        .spawn((Node {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::FlexEnd,
             ..default()
-        },
-    )).with_children(|parent| {
-        // Add text for displaying hourglass info
-        parent.spawn((
-            Node {
-                margin: UiRect::all(Val::Px(20.0)),
-                ..default()
-            },
-            Text::new("Hourglass: 10s remaining"),
-            TextFont {
-                font_size: 24.0,
-                ..default()
-            },
-            TextColor::from(Color::WHITE),
-            TextLayout::default(),
-            HourglassInfoText,
-        ));
-    });
-    
+        },))
+        .with_children(|parent| {
+            // Add text for displaying hourglass info
+            parent.spawn((
+                Node {
+                    margin: UiRect::all(Val::Px(20.0)),
+                    ..default()
+                },
+                Text::new("Hourglass: 10s remaining"),
+                TextFont {
+                    font_size: 24.0,
+                    ..default()
+                },
+                TextColor::from(Color::WHITE),
+                TextLayout::default(),
+                HourglassInfoText,
+            ));
+        });
+
     // Spawn a sprite-based hourglass using the helper function
     let hourglass_entity = spawn_hourglass(
         &mut commands,
@@ -98,20 +95,19 @@ fn setup(mut commands: Commands) {
         Vec2::ZERO,
         Vec2::new(100.0, 200.0),
         Color::srgb(0.8, 0.8, 0.8),
-        Color::srgb(0.9, 0.7, 0.2)
+        Color::srgb(0.9, 0.7, 0.2),
     );
-    
+
     // Add the MainHourglass marker and configure additional properties
-    commands.entity(hourglass_entity)
-        .insert(MainHourglass);
-    
+    commands.entity(hourglass_entity).insert(MainHourglass);
+
     // Add instructions - platform-aware message
     #[cfg(target_arch = "wasm32")]
     let instructions = "Tap/Click to flip the hourglass";
-    
+
     #[cfg(not(target_arch = "wasm32"))]
     let instructions = "Press SPACE to flip the hourglass";
-    
+
     commands.spawn((
         Node {
             position_type: PositionType::Absolute,
@@ -127,7 +123,7 @@ fn setup(mut commands: Commands) {
         TextColor::from(Color::WHITE),
         TextLayout::default(),
     ));
-    
+
     // Log initialization message to console in WASM mode
     #[cfg(target_arch = "wasm32")]
     console::log_1(&"Hourglass WASM example initialized".into());
@@ -140,14 +136,14 @@ fn handle_input(
     mut hourglasses: Query<&mut Hourglass, With<MainHourglass>>,
 ) {
     // Check for space key press or mouse/touch input
-    let should_flip = keyboard_input.just_pressed(KeyCode::Space) || 
-                      mouse_button.just_pressed(MouseButton::Left);
-    
+    let should_flip =
+        keyboard_input.just_pressed(KeyCode::Space) || mouse_button.just_pressed(MouseButton::Left);
+
     if should_flip {
         if let Ok(mut hourglass) = hourglasses.single_mut() {
             // Flip the hourglass
             hourglass.flip();
-            
+
             // Log flip action in WASM mode
             #[cfg(target_arch = "wasm32")]
             console::log_1(&"Hourglass flipped!".into());
@@ -169,12 +165,17 @@ fn update_ui(
         } else {
             "Upright"
         };
-        
-        let running = if hourglass.running { "Running" } else { "Stopped" };
-        
+
+        let running = if hourglass.running {
+            "Running"
+        } else {
+            "Stopped"
+        };
+
         text.0 = format!(
             "Hourglass: {}s remaining | Status: {} | {}",
             remaining_secs, status, running
-        ).into();
+        )
+        .into();
     }
 }

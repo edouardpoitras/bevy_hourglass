@@ -7,10 +7,10 @@ use bevy::prelude::*;
 pub struct HourglassConfig {
     /// Default color for hourglass containers
     pub default_container_color: Color,
-    
+
     /// Default color for hourglass sand
     pub default_sand_color: Color,
-    
+
     /// Default size for hourglasses
     pub default_size: Vec2,
 }
@@ -30,19 +30,19 @@ impl HourglassConfig {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Set the default container color
     pub fn with_container_color(mut self, color: Color) -> Self {
         self.default_container_color = color;
         self
     }
-    
+
     /// Set the default sand color
     pub fn with_sand_color(mut self, color: Color) -> Self {
         self.default_sand_color = color;
         self
     }
-    
+
     /// Set the default size
     pub fn with_size(mut self, size: Vec2) -> Self {
         self.default_size = size;
