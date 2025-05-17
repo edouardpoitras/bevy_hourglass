@@ -15,7 +15,7 @@ pub struct HourglassFlipStartEvent {
 pub struct HourglassEmptyEvent {
     /// Entity ID of the hourglass
     pub entity: Entity,
-    
+
     /// Total time the hourglass was running
     pub total_time: Duration,
 }
