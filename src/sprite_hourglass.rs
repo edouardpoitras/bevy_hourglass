@@ -18,7 +18,7 @@ pub struct TopSandSprite;
 pub struct BottomSandSprite;
 
 /// Spawn a sprite-based hourglass
-pub fn spawn_hourglass(
+pub fn spawn_sprite_hourglass(
     commands: &mut Commands,
     duration: Duration,
     position: Vec2,

@@ -1,4 +1,4 @@
-//! A WebAssembly-compatible simple example of the bevy_hourglass plugin.
+//! A WebAssembly-compatible simple example of the bevy_hourglass plugin with a simple UI.
 
 use bevy::prelude::*;
 use bevy_hourglass::*;
@@ -89,7 +89,7 @@ fn setup(mut commands: Commands) {
         });
 
     // Spawn a sprite-based hourglass using the helper function
-    let hourglass_entity = spawn_hourglass(
+    let hourglass_entity = spawn_sprite_hourglass(
         &mut commands,
         Duration::from_secs(10),
         Vec2::ZERO,

@@ -10,6 +10,7 @@ mod events;
 mod plugin;
 mod resources;
 mod sprite_hourglass;
+mod mesh_hourglass;
 mod systems;
 
 pub use components::*;
@@ -17,3 +18,4 @@ pub use events::*;
 pub use plugin::HourglassPlugin;
 pub use resources::*;
 pub use sprite_hourglass::*;
+pub use mesh_hourglass::*;
