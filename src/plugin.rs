@@ -23,7 +23,7 @@ impl Plugin for HourglassPlugin {
 
         // Add all systems individually to avoid configuration issues
         app.add_systems(Update, update_hourglasses);
-        
+
         // Sprite-based visualization systems
         app.add_systems(Update, update_container_sprite);
         app.add_systems(Update, update_top_sand_sprite);

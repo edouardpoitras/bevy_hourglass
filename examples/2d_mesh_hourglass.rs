@@ -1,7 +1,10 @@
 //! Example of the mesh-based hourglass implementations.
 
 use bevy::prelude::*;
-use bevy_hourglass::{HourglassMeshBuilder, HourglassMeshBodyConfig, HourglassMeshPlatesConfig, HourglassMeshSandConfig, HourglassPlugin};
+use bevy_hourglass::{
+    HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
+    HourglassMeshSandConfig, HourglassPlugin,
+};
 
 fn main() {
     App::new()
@@ -16,7 +19,7 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn(Camera2d::default());
-    
+
     // Create an hourglass with body and plates using the builder pattern
     HourglassMeshBuilder::new(Transform::from_xyz(0.0, 0.0, 0.0))
         .with_body(HourglassMeshBodyConfig {
@@ -37,9 +40,9 @@ fn setup(
         })
         .with_sand(HourglassMeshSandConfig {
             color: Color::srgb(0.9, 0.8, 0.6),
-            fill_percent: 0.75, // 75% of sand in top bulb, 25% in bottom
-            scale_factor: 0.95,  // Sand is 95% of glass size
-            neck_scale_factor: 0.35,  // Sand is 35% of neck size
+            fill_percent: 0.75,      // 75% of sand in top bulb, 25% in bottom
+            scale_factor: 0.95,      // Sand is 95% of glass size
+            neck_scale_factor: 0.35, // Sand is 35% of neck size
         })
         .build(&mut commands, &mut meshes, &mut materials);
 }
