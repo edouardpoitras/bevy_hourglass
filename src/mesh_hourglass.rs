@@ -179,14 +179,16 @@ impl HourglassMeshBuilder {
                     .entity(hourglass_entity)
                     .add_child(top_sand)
                     .add_child(bottom_sand);
-                
+
                 // Add sand state component for animation support
-                commands.entity(hourglass_entity).insert(HourglassMeshSandState {
-                    fill_percent: sand_config.fill_percent,
-                    body_config: body_config.clone(),
-                    sand_config: sand_config.clone(),
-                    needs_update: false,
-                });
+                commands
+                    .entity(hourglass_entity)
+                    .insert(HourglassMeshSandState {
+                        fill_percent: sand_config.fill_percent,
+                        body_config: body_config.clone(),
+                        sand_config: sand_config.clone(),
+                        needs_update: false,
+                    });
             }
         }
 
@@ -666,10 +668,7 @@ impl HourglassMeshBuilder {
 }
 
 /// Update sand fill percentage
-pub fn update_sand_fill_percent(
-    sand_state: &mut HourglassMeshSandState,
-    new_fill_percent: f32,
-) {
+pub fn update_sand_fill_percent(sand_state: &mut HourglassMeshSandState, new_fill_percent: f32) {
     let clamped_fill_percent = new_fill_percent.clamp(0.0, 1.0);
     if (sand_state.fill_percent - clamped_fill_percent).abs() > f32::EPSILON {
         sand_state.fill_percent = clamped_fill_percent;
@@ -682,10 +681,9 @@ pub fn update_sand_fill_percent(
 pub fn update_mesh_hourglass_sand(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    materials: Res<Assets<ColorMaterial>>,
     mut sand_query: Query<(Entity, &mut HourglassMeshSandState), With<HourglassMesh>>,
     children_query: Query<&Children>,
-    mut sand_entities_query: Query<(Entity, &HourglassMeshSand, &mut Mesh2d, &MeshMaterial2d)>,
+    mut sand_entities_query: Query<(Entity, &HourglassMeshSand, &mut Mesh2d)>,
 ) {
     for (hourglass_entity, mut sand_state) in sand_query.iter_mut() {
         if !sand_state.needs_update {
@@ -696,9 +694,8 @@ pub fn update_mesh_hourglass_sand(
 
         // Find sand child entities
         if let Ok(children) = children_query.get(hourglass_entity) {
-            for &child in children.iter() {
-                if let Ok((entity, sand_type, mut mesh_handle, material_handle)) =
-                    sand_entities_query.get_mut(child)
+            for child in children.iter() {
+                if let Ok((entity, sand_type, mut mesh_handle)) = sand_entities_query.get_mut(child)
                 {
                     match sand_type {
                         HourglassMeshSand::TopBulb => {
@@ -706,7 +703,9 @@ pub fn update_mesh_hourglass_sand(
                                 &sand_state.body_config,
                                 &sand_state.sand_config,
                             );
-                            if let Some(new_mesh) = HourglassMeshBuilder::create_mesh_from_points(points) {
+                            if let Some(new_mesh) =
+                                HourglassMeshBuilder::create_mesh_from_points(points)
+                            {
                                 mesh_handle.0 = meshes.add(new_mesh);
                             } else {
                                 // Empty mesh - remove the mesh component
@@ -718,7 +717,9 @@ pub fn update_mesh_hourglass_sand(
                                 &sand_state.body_config,
                                 &sand_state.sand_config,
                             );
-                            if let Some(new_mesh) = HourglassMeshBuilder::create_mesh_from_points(points) {
+                            if let Some(new_mesh) =
+                                HourglassMeshBuilder::create_mesh_from_points(points)
+                            {
                                 mesh_handle.0 = meshes.add(new_mesh);
                             } else {
                                 // Empty mesh - remove the mesh component
@@ -730,5 +731,4 @@ pub fn update_mesh_hourglass_sand(
             }
         }
     }
-}
 }

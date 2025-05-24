@@ -54,11 +54,11 @@ fn animate_hourglass(
     mut sand_query: Query<&mut HourglassMeshSandState, With<HourglassMesh>>,
 ) {
     for mut sand_state in sand_query.iter_mut() {
-        // Create a simple animation that cycles the fill percentage over 5 seconds
-        let cycle_time = 5.0; // seconds
+        // Create a simple animation that cycles the fill percentage over 30 seconds
+        let cycle_time = 30.0; // seconds
         let elapsed = time.elapsed_secs() % cycle_time;
         let t = elapsed / cycle_time;
-        
+
         // Create a smooth back-and-forth animation
         let fill_percent = if t < 0.5 {
             // First half: 1.0 to 0.0
@@ -67,7 +67,7 @@ fn animate_hourglass(
             // Second half: 0.0 to 1.0
             (t - 0.5) * 2.0
         };
-        
+
         update_sand_fill_percent(&mut sand_state, fill_percent);
     }
 }
