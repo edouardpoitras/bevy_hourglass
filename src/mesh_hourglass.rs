@@ -6,6 +6,8 @@ use bevy::{
     sprite::AlphaMode2d,
 };
 use earcutr::earcut;
+use std::time::Duration;
+use crate::components::Hourglass;
 
 /// Configuration for the hourglass body (the glass part)
 #[derive(Clone, Debug)]
@@ -126,6 +128,7 @@ pub struct HourglassMeshBuilder {
     body_config: Option<HourglassMeshBodyConfig>,
     plates_config: Option<HourglassMeshPlatesConfig>,
     sand_config: Option<HourglassMeshSandConfig>,
+    timing: Option<Duration>,
 }
 
 impl HourglassMeshBuilder {
@@ -136,6 +139,7 @@ impl HourglassMeshBuilder {
             body_config: None,
             plates_config: None,
             sand_config: None,
+            timing: None,
         }
     }
 
@@ -157,6 +161,12 @@ impl HourglassMeshBuilder {
         self
     }
 
+    /// Adds automatic timing to the hourglass with the specified duration
+    pub fn with_timing(mut self, duration: Duration) -> Self {
+        self.timing = Some(duration);
+        self
+    }
+
     /// Builds the hourglass entity and all its configured components
     pub fn build(
         self,
@@ -165,7 +175,15 @@ impl HourglassMeshBuilder {
         materials: &mut ResMut<Assets<ColorMaterial>>,
     ) -> Entity {
         // Create parent entity for the hourglass
-        let hourglass_entity = commands.spawn((HourglassMesh, self.transform)).id();
+        let mut entity_commands = commands.spawn((HourglassMesh, self.transform));
+        
+        // Add automatic timing component if specified
+        if let Some(duration) = self.timing {
+            let hourglass = Hourglass::new(duration);
+            entity_commands.insert(hourglass);
+        }
+        
+        let hourglass_entity = entity_commands.id();
 
         // Add body if configured
         if let Some(body_config) = &self.body_config {
@@ -788,4 +806,43 @@ pub fn update_mesh_hourglass_sand(
             }
         }
     }
+}
+
+/// System to sync Hourglass component state with HourglassMeshSandState
+pub fn sync_mesh_hourglass_with_timer(
+    mut mesh_query: Query<
+        (&Hourglass, &mut HourglassMeshSandState),
+        (With<HourglassMesh>, Changed<Hourglass>),
+    >,
+) {
+    for (hourglass, mut sand_state) in mesh_query.iter_mut() {
+        // Calculate fill percentage based on hourglass state
+        // When not flipped: upper_chamber represents sand in top bulb
+        // When flipped: upper_chamber still represents sand physically at the top
+        let new_fill_percent = if hourglass.flipped {
+            // When flipped, the "bottom" chamber is visually at the top
+            hourglass.lower_chamber
+        } else {
+            // When not flipped, the "upper" chamber is visually at the top
+            hourglass.upper_chamber
+        };
+
+        update_sand_fill_percent(&mut sand_state, new_fill_percent);
+    }
+}
+
+/// Spawn a mesh-based hourglass with automatic timing and default configuration
+pub fn spawn_mesh_hourglass_with_timer(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    duration: Duration,
+    position: Vec3,
+) -> Entity {
+    HourglassMeshBuilder::new(Transform::from_translation(position))
+        .with_body(HourglassMeshBodyConfig::default())
+        .with_plates(HourglassMeshPlatesConfig::default())
+        .with_sand(HourglassMeshSandConfig::default())
+        .with_timing(duration)
+        .build(commands, meshes, materials)
 }
