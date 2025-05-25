@@ -8,27 +8,30 @@
 
 A flexible hourglass plugin for Bevy applications.
 
+**Website:** [https://github.com/edouardpoitras/bevy_hourglass](https://github.com/edouardpoitras/bevy_hourglass)
+
 ## Features
 
 - Customizable visual hourglass timer
 - Sprite-based rendering
+- 2D mesh-based hourglass with detailed geometry
 - Configurable duration
 - Events for state changes (flipping, emptying)
 - WebAssembly (WASM) support
 
 ## Examples
 
-### Simple Example
+### 2D Mesh Hourglass Example
 
-Run the simple example with:
+Run the 2D mesh hourglass example with:
 
 ```bash
-cargo run --example simple
+cargo run --example 2d_mesh_hourglass
 ```
 
 ### WebAssembly Example
 
-This project includes WebAssembly support for the simple example, allowing you to run the hourglass in a web browser.
+This project includes WebAssembly support for the 2D mesh hourglass example, allowing you to run the hourglass in a web browser.
 
 #### Building for WASM
 
@@ -45,7 +48,7 @@ This project includes WebAssembly support for the simple example, allowing you t
 This script will:
 - Install the necessary tools (wasm-bindgen-cli) if not already installed
 - Add the wasm32-unknown-unknown target if needed
-- Build the example for the WASM target
+- Build the 2D mesh hourglass example for the WASM target
 - Generate JavaScript bindings
 
 #### Running the WASM Example
@@ -73,7 +76,10 @@ In your Bevy application:
 
 ```rust
 use bevy::prelude::*;
-use bevy_hourglass::*;
+use bevy_hourglass::{
+    HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
+    HourglassMeshSandConfig, HourglassPlugin,
+};
 use std::time::Duration;
 
 fn main() {
@@ -83,19 +89,39 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
-    // Spawn a camera
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
     commands.spawn(Camera2d::default());
-    
-    // Spawn a hourglass
-    spawn_hourglass(
-        &mut commands,
-        Duration::from_secs(60),  // 60 second timer
-        Vec2::ZERO,              // Position at center
-        Vec2::new(100.0, 200.0), // Size
-        Color::srgb(0.8, 0.8, 0.8), // Container color
-        Color::srgb(0.9, 0.7, 0.2)  // Sand color
-    );
+
+    // Create a 2D mesh hourglass with detailed geometry
+    HourglassMeshBuilder::new(Transform::from_xyz(0.0, 0.0, 0.0))
+        .with_body(HourglassMeshBodyConfig {
+            total_height: 200.0,
+            bulb_radius: 100.0,
+            bulb_width_factor: 0.75,
+            bulb_height_factor: 1.0,
+            bulb_curve_resolution: 20,
+            neck_width: 12.0,
+            neck_height: 7.0,
+            neck_curve_resolution: 5,
+            color: Color::srgba(0.85, 0.95, 1.0, 0.2),
+        })
+        .with_plates(HourglassMeshPlatesConfig {
+            width: 165.0,
+            height: 10.0,
+            color: Color::srgb(0.6, 0.4, 0.2),
+        })
+        .with_sand(HourglassMeshSandConfig {
+            color: Color::srgb(0.9, 0.8, 0.6),
+            fill_percent: 1.0,       // Start with full top bulb
+            scale_factor: 0.95,      // Sand is 95% of glass size
+            neck_scale_factor: 0.35, // Sand is 35% of neck size
+        })
+        .with_timing(Duration::from_secs(30)) // 30-second timer for automatic animation
+        .build(&mut commands, &mut meshes, &mut materials);
 }
 ```
 
