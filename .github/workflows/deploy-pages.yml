@@ -41,7 +41,13 @@ jobs:
           ${{ runner.os }}-cargo-
           
     - name: Install wasm-bindgen-cli
-      run: cargo install wasm-bindgen-cli
+      run: |
+        if ! command -v wasm-bindgen &> /dev/null; then
+          echo "Installing wasm-bindgen-cli..."
+          cargo install wasm-bindgen-cli
+        else
+          echo "wasm-bindgen-cli already installed."
+        fi
       
     - name: Build WASM
       run: |
