@@ -32,7 +32,7 @@ impl Default for HourglassMeshBodyConfig {
             neck_width: 12.0,
             neck_height: 7.0,
             neck_curve_resolution: 5,
-            color: Color::srgba(0.85, 0.95, 1.0, 0.6), // Light blue glass with transparency
+            color: Color::srgba(0.85, 0.95, 1.0, 0.2), // Light blue glass with transparency
         }
     }
 }

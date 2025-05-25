@@ -32,12 +32,12 @@ fn setup(
             neck_width: 12.0,
             neck_height: 7.0,
             neck_curve_resolution: 5,
-            color: Color::srgb(0.8, 0.5, 0.3),
+            color: Color::srgba(0.85, 0.95, 1.0, 0.2),
         })
         .with_plates(HourglassMeshPlatesConfig {
             width: 165.0,
             height: 10.0,
-            color: Color::srgb(0.0, 0.0, 0.0),
+            color: Color::srgb(0.6, 0.4, 0.2),
         })
         .with_sand(HourglassMeshSandConfig {
             color: Color::srgb(0.9, 0.8, 0.6),
