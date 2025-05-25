@@ -1,7 +1,7 @@
 //! Defines the hourglass plugin.
 
 use crate::events::*;
-use crate::mesh_hourglass::update_mesh_hourglass_sand;
+use crate::mesh_hourglass::{sync_mesh_hourglass_with_timer, update_mesh_hourglass_sand};
 use crate::resources::HourglassConfig;
 use crate::sprite_hourglass::{
     update_bottom_sand_sprite, update_container_sprite, update_top_sand_sprite,
@@ -31,6 +31,9 @@ impl Plugin for HourglassPlugin {
         app.add_systems(Update, update_bottom_sand_sprite);
 
         // Mesh-based visualization systems
-        app.add_systems(Update, update_mesh_hourglass_sand);
+        app.add_systems(
+            Update,
+            (sync_mesh_hourglass_with_timer, update_mesh_hourglass_sand).chain(),
+        );
     }
 }
