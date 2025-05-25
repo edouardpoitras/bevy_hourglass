@@ -106,6 +106,18 @@ pub struct HourglassMeshSandState {
     pub needs_update: bool,
 }
 
+/// Type alias for the complex sand entities query to reduce type complexity
+type SandEntitiesQuery<'w, 's> = Query<
+    'w,
+    's,
+    (
+        Entity,
+        &'static HourglassMeshSand,
+        Option<&'static mut Mesh2d>,
+        Option<&'static MeshMaterial2d<ColorMaterial>>,
+    ),
+>;
+
 /// Builder for creating a mesh-based hourglass
 #[derive(Default)]
 pub struct HourglassMeshBuilder {
@@ -570,13 +582,13 @@ impl HourglassMeshBuilder {
         let bottom_fill_line_y =
             bottom_bulb_base_y + (bottom_bulb_top_y - bottom_bulb_base_y) * bottom_fill_percent;
 
-
         if bottom_fill_percent > 0.0 {
             // Start from bottom left of the bulb
             for i in 0..=body_config.bulb_curve_resolution {
                 let theta = std::f32::consts::PI / 2.0
                     * (i as f32 / body_config.bulb_curve_resolution as f32);
-                let x = (-bulb_width * theta.cos()).min(-neck_half_width * sand_config.scale_factor);
+                let x =
+                    (-bulb_width * theta.cos()).min(-neck_half_width * sand_config.scale_factor);
                 let y = -neck_half_height - half_height + bulb_height * theta.sin();
 
                 if y <= bottom_fill_line_y {
@@ -586,7 +598,8 @@ impl HourglassMeshBuilder {
                     if i > 0 {
                         let prev_theta = std::f32::consts::PI / 2.0
                             * ((i - 1) as f32 / body_config.bulb_curve_resolution as f32);
-                        let prev_x = (-bulb_width * prev_theta.cos()).min(-neck_half_width * sand_config.scale_factor);
+                        let prev_x = (-bulb_width * prev_theta.cos())
+                            .min(-neck_half_width * sand_config.scale_factor);
                         let prev_y =
                             -neck_half_height - half_height + bulb_height * prev_theta.sin();
                         if prev_y <= bottom_fill_line_y {
@@ -611,7 +624,8 @@ impl HourglassMeshBuilder {
                     if i > 0 {
                         let prev_theta = std::f32::consts::PI / 2.0
                             * ((i - 1) as f32 / body_config.bulb_curve_resolution as f32);
-                        let prev_x = (bulb_width * prev_theta.cos()).max(neck_half_width * sand_config.scale_factor);
+                        let prev_x = (bulb_width * prev_theta.cos())
+                            .max(neck_half_width * sand_config.scale_factor);
                         let prev_y =
                             -neck_half_height - half_height + bulb_height * prev_theta.sin();
                         if prev_y <= bottom_fill_line_y {
@@ -646,13 +660,13 @@ impl HourglassMeshBuilder {
         if points.is_empty() {
             return None;
         }
-        
+
         let num_vertices = points.len();
         let points_3d = points.iter().map(|p| [p[0], p[1], 0.0]).collect::<Vec<_>>();
 
         let coords: Vec<f32> = points.iter().flat_map(|p| vec![p[0], p[1]]).collect();
         let hole_indices: Vec<usize> = Vec::new();
-        
+
         match earcut(&coords, &hole_indices, 2) {
             Ok(triangles) => {
                 let indices: Vec<u32> = triangles.into_iter().map(|i| i as u32).collect();
@@ -687,7 +701,7 @@ pub fn update_mesh_hourglass_sand(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut sand_query: Query<(Entity, &mut HourglassMeshSandState), With<HourglassMesh>>,
     children_query: Query<&Children>,
-    mut sand_entities_query: Query<(Entity, &HourglassMeshSand, Option<&mut Mesh2d>, Option<&MeshMaterial2d<ColorMaterial>>)>,
+    mut sand_entities_query: SandEntitiesQuery,
 ) {
     for (hourglass_entity, mut sand_state) in sand_query.iter_mut() {
         if !sand_state.needs_update {
@@ -699,7 +713,8 @@ pub fn update_mesh_hourglass_sand(
         // Find sand child entities
         if let Ok(children) = children_query.get(hourglass_entity) {
             for child in children.iter() {
-                if let Ok((entity, sand_type, mesh_handle_opt, material_opt)) = sand_entities_query.get_mut(child)
+                if let Ok((entity, sand_type, mesh_handle_opt, material_opt)) =
+                    sand_entities_query.get_mut(child)
                 {
                     match sand_type {
                         HourglassMeshSand::TopBulb => {
@@ -720,10 +735,9 @@ pub fn update_mesh_hourglass_sand(
                                     } else {
                                         MeshMaterial2d(materials.add(sand_state.sand_config.color))
                                     };
-                                    commands.entity(entity).insert((
-                                        Mesh2d(mesh_handle),
-                                        material,
-                                    ));
+                                    commands
+                                        .entity(entity)
+                                        .insert((Mesh2d(mesh_handle), material));
                                 }
                             } else {
                                 // Empty mesh - remove the mesh component if it exists
@@ -750,10 +764,9 @@ pub fn update_mesh_hourglass_sand(
                                     } else {
                                         MeshMaterial2d(materials.add(sand_state.sand_config.color))
                                     };
-                                    commands.entity(entity).insert((
-                                        Mesh2d(mesh_handle),
-                                        material,
-                                    ));
+                                    commands
+                                        .entity(entity)
+                                        .insert((Mesh2d(mesh_handle), material));
                                 }
                             } else {
                                 // Empty mesh - remove the mesh component if it exists
