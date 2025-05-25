@@ -819,18 +819,8 @@ pub fn update_mesh_hourglass_sand(
 /// System to sync Hourglass component state with HourglassMeshSandState
 pub fn sync_mesh_hourglass_with_timer(mut mesh_query: MeshHourglassQuery) {
     for (hourglass, mut sand_state) in mesh_query.iter_mut() {
-        // Calculate fill percentage based on hourglass state
-        // When not flipped: upper_chamber represents sand in top bulb
-        // When flipped: upper_chamber still represents sand physically at the top
-        let new_fill_percent = if hourglass.flipped {
-            // When flipped, the "bottom" chamber is visually at the top
-            hourglass.lower_chamber
-        } else {
-            // When not flipped, the "upper" chamber is visually at the top
-            hourglass.upper_chamber
-        };
-
-        update_sand_fill_percent(&mut sand_state, new_fill_percent);
+        // Upper_chamber always represents sand physically at the top after chamber swapping
+        update_sand_fill_percent(&mut sand_state, hourglass.upper_chamber);
     }
 }
 
