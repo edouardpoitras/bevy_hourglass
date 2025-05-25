@@ -4,81 +4,218 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bevy Hourglass WASM Demo</title>
+    <meta name="description" content="Interactive hourglass demo built with Bevy and Rust, compiled to WebAssembly">
+    <meta name="keywords" content="bevy, rust, wasm, webassembly, hourglass, game, demo">
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="Bevy Hourglass WASM Demo">
+    <meta property="og:description" content="Interactive hourglass demo built with Bevy and Rust">
+    <meta property="og:type" content="website">
+    
+    <!-- Favicon using hourglass emoji -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⧗</text></svg>">
+    
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100vh;
-            background-color: #333;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             color: white;
         }
         
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .info-panel a {
+            color: #64b5f6;
+            text-decoration: none;
+        }
+        
+        .info-panel a:hover {
+            text-decoration: underline;
+        }
+        
         #loading {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             margin-bottom: 2rem;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
         
         #error {
             display: none;
-            color: #ff5555;
+            color: #ff6b6b;
             max-width: 80%;
             text-align: center;
-            margin-top: 2rem;
-            padding: 1rem;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
+            margin: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        #error h3 {
+            margin-top: 0;
+            color: #ff8a80;
         }
         
         canvas {
-            background-color: #222;
+            background: radial-gradient(circle, #2c2c2c 0%, #1a1a1a 100%);
             max-width: 100%;
             max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .hidden {
             display: none !important;
         }
+        
+        .github-link {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(100, 181, 246, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #64b5f6;
+            font-size: 14px;
+            border: 1px solid rgba(100, 181, 246, 0.3);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .github-link:hover {
+            background: rgba(100, 181, 246, 0.3);
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 4px 16px rgba(100, 181, 246, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .info-panel {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 10px;
+                text-align: center;
+            }
+            
+            #loading {
+                font-size: 1.4rem;
+                margin: 1rem;
+            }
+            
+            .github-link {
+                position: relative;
+                bottom: auto;
+                left: auto;
+                transform: none;
+                margin-top: 20px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="loading">Loading Bevy Hourglass...</div>
-    <div id="error"></div>
+    <div class="info-panel">
+        ⧗ <strong>Bevy Hourglass</strong><br>
+        <a href="https://github.com/edouardpoitras/bevy_hourglass" target="_blank">View on GitHub</a>
+    </div>
+    
+    <div id="loading">
+        <div>⧗ Loading Bevy Hourglass...</div>
+        <div style="font-size: 0.8em; margin-top: 10px; opacity: 0.8;">
+            Built with Rust & Bevy, compiled to WebAssembly
+        </div>
+    </div>
+    
+    <div id="error">
+        <h3>Failed to Load</h3>
+        <p>There was an error loading the WebAssembly application.</p>
+        <details>
+            <summary>Error Details</summary>
+            <div id="error-details"></div>
+        </details>
+        <p>
+            <small>
+                Try refreshing the page or check the browser console for more information.<br>
+                Make sure your browser supports WebAssembly.
+            </small>
+        </p>
+    </div>
+    
+    <a href="https://github.com/edouardpoitras/bevy_hourglass" target="_blank" class="github-link">
+        🔗 View Source Code
+    </a>
     
     <script type="module">
         // Import our WASM module
-        import init from './wasm.js';
+        import init from './simple_with_ui.js';
         
-        // Function to handle errors
+        // Function to handle errors with better user feedback
         function handleError(e) {
-            console.error(e);
+            console.error('WASM Loading Error:', e);
             document.getElementById('loading').classList.add('hidden');
             const errorEl = document.getElementById('error');
-            errorEl.textContent = 'Error loading the application: ' + e.message;
+            const errorDetailsEl = document.getElementById('error-details');
+            
+            errorDetailsEl.textContent = e.message || 'Unknown error occurred';
             errorEl.style.display = 'block';
         }
         
         // Main async function to load WASM
         async function run() {
             try {
+                console.log('🚀 Starting Bevy Hourglass WASM demo...');
+                
                 // Initialize the WASM module
                 await init();
                 
                 // Hide loading screen once loaded
                 document.getElementById('loading').classList.add('hidden');
+                console.log('✅ Bevy Hourglass loaded successfully!');
+                
             } catch (e) {
                 handleError(e);
             }
         }
         
-        // Start loading
-        run();
+        // Check for WebAssembly support
+        if (typeof WebAssembly !== 'object') {
+            handleError(new Error('WebAssembly is not supported in this browser'));
+        } else {
+            // Start loading
+            run();
+        }
     </script>
 </body>
 </html>
