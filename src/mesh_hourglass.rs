@@ -477,7 +477,7 @@ impl HourglassMeshBuilder {
 
 /// Helper functions for sand mesh generation
 impl HourglassMeshBuilder {
-    /// Generate top bulb sand mesh points
+    /// Generate top bulb sand mesh points with curved surface
     fn generate_top_sand_points(
         body_config: &HourglassMeshBodyConfig,
         sand_config: &HourglassMeshSandConfig,
@@ -494,10 +494,10 @@ impl HourglassMeshBuilder {
 
         let mut top_points: Vec<[f32; 2]> = Vec::new();
 
-        // Calculate the fill line for the top bulb
+        // Calculate the base fill line for the top bulb
         let top_bulb_base_y = neck_half_height;
         let top_bulb_top_y = neck_half_height + half_height;
-        let fill_line_y =
+        let base_fill_line_y =
             top_bulb_base_y + (top_bulb_top_y - top_bulb_base_y) * sand_config.fill_percent;
 
         if sand_config.fill_percent > 0.0 {
@@ -507,7 +507,7 @@ impl HourglassMeshBuilder {
                 -body_config.bulb_radius - neck_half_height,
             ]);
 
-            // Left side of top bulb (up to fill line)
+            // Left side of top bulb (up to curved sand surface)
             for i in (0..=body_config.bulb_curve_resolution).rev() {
                 let theta = std::f32::consts::PI / 2.0
                     * (i as f32 / body_config.bulb_curve_resolution as f32);
@@ -515,61 +515,64 @@ impl HourglassMeshBuilder {
                     .min(-neck_half_width * sand_config.neck_scale_factor);
                 let y = neck_half_height + half_height - bulb_height * theta.sin();
 
-                if y <= fill_line_y {
+                // Calculate curved sand surface y-position (downward bend/concave)
+                let x_normalized = x.abs() / bulb_width; // 0 to 1 from center to edge
+                let curve_depth = bulb_height * 0.1 * sand_config.fill_percent; // Curve depth based on fill
+                let curved_fill_y = base_fill_line_y - curve_depth * (1.0 - x_normalized * x_normalized);
+
+                if y <= curved_fill_y {
                     top_points.push([x, y]);
                 } else {
-                    // Calculate intersection with fill line
+                    // Calculate intersection with curved sand surface
                     let prev_i = i + 1;
                     if prev_i <= body_config.bulb_curve_resolution {
                         let prev_theta = std::f32::consts::PI / 2.0
                             * (prev_i as f32 / body_config.bulb_curve_resolution as f32);
+                        let prev_x = (-bulb_width * prev_theta.cos())
+                            .min(-neck_half_width * sand_config.neck_scale_factor);
                         let prev_y =
                             neck_half_height + half_height - bulb_height * prev_theta.sin();
-                        if prev_y <= fill_line_y {
-                            // Interpolate x position at fill line
-                            let t = (fill_line_y - prev_y) / (y - prev_y);
-                            let x_at_fill = x * t
-                                + (-bulb_width * prev_theta.cos()).min(-neck_half_width)
-                                    * (1.0 - t);
-                            top_points.push([x_at_fill, fill_line_y]);
+                        
+                        let prev_x_normalized = prev_x.abs() / bulb_width;
+                        let prev_curved_fill_y = base_fill_line_y - curve_depth * (1.0 - prev_x_normalized * prev_x_normalized);
+                        
+                        if prev_y <= prev_curved_fill_y {
+                            // Interpolate intersection point
+                            let t = (curved_fill_y - prev_y) / (y - prev_y);
+                            let x_at_fill = prev_x * (1.0 - t) + x * t;
+                            top_points.push([x_at_fill, curved_fill_y]);
                         }
                     }
                     break;
                 }
             }
 
-            // Calculate right side x at fill line
-            let mut right_x_at_fill = neck_half_width;
-            for i in (0..=body_config.bulb_curve_resolution).rev() {
-                let theta = std::f32::consts::PI / 2.0
-                    * (i as f32 / body_config.bulb_curve_resolution as f32);
-                let x =
-                    (bulb_width * theta.cos()).max(neck_half_width * sand_config.neck_scale_factor);
-                let y = neck_half_height + half_height - bulb_height * theta.sin();
-
-                if y <= fill_line_y {
-                    right_x_at_fill = x;
-                } else {
-                    // Calculate intersection
-                    let prev_i = i + 1;
-                    if prev_i <= body_config.bulb_curve_resolution {
-                        let prev_theta = std::f32::consts::PI / 2.0
-                            * (prev_i as f32 / body_config.bulb_curve_resolution as f32);
-                        let prev_y =
-                            neck_half_height + half_height - bulb_height * prev_theta.sin();
-                        if prev_y <= fill_line_y {
-                            let t = (fill_line_y - prev_y) / (y - prev_y);
-                            right_x_at_fill = x * t
-                                + (bulb_width * prev_theta.cos()).max(neck_half_width) * (1.0 - t);
-                        }
-                    }
-                    break;
+            // Generate curved sand surface points from left to right
+            let surface_resolution = 20; // Number of points for the curved surface
+            for i in 0..=surface_resolution {
+                let t = i as f32 / surface_resolution as f32;
+                
+                // Calculate x position across the bulb width
+                let left_x = -bulb_width;
+                let right_x = bulb_width;
+                let x = left_x + (right_x - left_x) * t;
+                
+                // Only include points within the valid bulb bounds at this y level
+                let x_normalized = x.abs() / bulb_width;
+                if x_normalized <= 1.0 {
+                    let curve_depth = bulb_height * 0.1 * sand_config.fill_percent;
+                    let curved_y = base_fill_line_y - curve_depth * (1.0 - x_normalized * x_normalized);
+                    
+                    // Ensure we stay within neck bounds
+                    let bounded_x = x.clamp(-bulb_width, bulb_width)
+                        .clamp(-neck_half_width * sand_config.neck_scale_factor, 
+                               neck_half_width * sand_config.neck_scale_factor);
+                    
+                    top_points.push([bounded_x, curved_y]);
                 }
             }
 
-            top_points.push([right_x_at_fill, fill_line_y]);
-
-            // Right side of top bulb (down from fill line)
+            // Right side of top bulb (down from curved sand surface)
             for i in 0..=body_config.bulb_curve_resolution {
                 let theta = std::f32::consts::PI / 2.0
                     * (i as f32 / body_config.bulb_curve_resolution as f32);
@@ -577,7 +580,12 @@ impl HourglassMeshBuilder {
                     (bulb_width * theta.cos()).max(neck_half_width * sand_config.neck_scale_factor);
                 let y = neck_half_height + half_height - bulb_height * theta.sin();
 
-                if y <= fill_line_y {
+                // Calculate curved sand surface
+                let x_normalized = x.abs() / bulb_width;
+                let curve_depth = bulb_height * 0.1 * sand_config.fill_percent;
+                let curved_fill_y = base_fill_line_y - curve_depth * (1.0 - x_normalized * x_normalized);
+
+                if y <= curved_fill_y {
                     top_points.push([x, y]);
                 }
             }
@@ -592,7 +600,7 @@ impl HourglassMeshBuilder {
         top_points
     }
 
-    /// Generate bottom bulb sand mesh points
+    /// Generate bottom bulb sand mesh points with curved mound surface
     fn generate_bottom_sand_points(
         body_config: &HourglassMeshBodyConfig,
         sand_config: &HourglassMeshSandConfig,
@@ -609,11 +617,11 @@ impl HourglassMeshBuilder {
 
         let mut bottom_points: Vec<[f32; 2]> = Vec::new();
 
-        // Calculate the fill line for the bottom bulb
+        // Calculate the base fill line for the bottom bulb
         let bottom_fill_percent = 1.0 - sand_config.fill_percent;
         let bottom_bulb_base_y = -neck_half_height - half_height;
         let bottom_bulb_top_y = -neck_half_height;
-        let bottom_fill_line_y =
+        let base_bottom_fill_line_y =
             bottom_bulb_base_y + (bottom_bulb_top_y - bottom_bulb_base_y) * bottom_fill_percent;
 
         if bottom_fill_percent > 0.0 {
@@ -625,10 +633,15 @@ impl HourglassMeshBuilder {
                     (-bulb_width * theta.cos()).min(-neck_half_width * sand_config.scale_factor);
                 let y = -neck_half_height - half_height + bulb_height * theta.sin();
 
-                if y <= bottom_fill_line_y {
+                // Calculate curved sand surface y-position (upward mound/convex)
+                let x_normalized = x.abs() / bulb_width; // 0 to 1 from center to edge
+                let mound_height = bulb_height * 0.15 * bottom_fill_percent; // Mound height based on fill
+                let curved_fill_y = base_bottom_fill_line_y + mound_height * (1.0 - x_normalized * x_normalized);
+
+                if y <= curved_fill_y {
                     bottom_points.push([x, y]);
                 } else {
-                    // Calculate intersection with fill line
+                    // Calculate intersection with curved sand surface
                     if i > 0 {
                         let prev_theta = std::f32::consts::PI / 2.0
                             * ((i - 1) as f32 / body_config.bulb_curve_resolution as f32);
@@ -636,42 +649,44 @@ impl HourglassMeshBuilder {
                             .min(-neck_half_width * sand_config.scale_factor);
                         let prev_y =
                             -neck_half_height - half_height + bulb_height * prev_theta.sin();
-                        if prev_y <= bottom_fill_line_y {
-                            let t = (bottom_fill_line_y - prev_y) / (y - prev_y);
+                        
+                        let prev_x_normalized = prev_x.abs() / bulb_width;
+                        let prev_curved_fill_y = base_bottom_fill_line_y + mound_height * (1.0 - prev_x_normalized * prev_x_normalized);
+                        
+                        if prev_y <= prev_curved_fill_y {
+                            let t = (curved_fill_y - prev_y) / (y - prev_y);
                             let x_at_fill = prev_x * (1.0 - t) + x * t;
-                            bottom_points.push([x_at_fill, bottom_fill_line_y]);
+                            bottom_points.push([x_at_fill, curved_fill_y]);
                         }
                     }
                     break;
                 }
             }
 
-            // Calculate right side intersection
-            let mut right_x_at_fill = neck_half_width * sand_config.scale_factor;
-            for i in 0..=body_config.bulb_curve_resolution {
-                let theta = std::f32::consts::PI / 2.0
-                    * (i as f32 / body_config.bulb_curve_resolution as f32);
-                let x = (bulb_width * theta.cos()).max(neck_half_width * sand_config.scale_factor);
-                let y = -neck_half_height - half_height + bulb_height * theta.sin();
-
-                if y > bottom_fill_line_y {
-                    if i > 0 {
-                        let prev_theta = std::f32::consts::PI / 2.0
-                            * ((i - 1) as f32 / body_config.bulb_curve_resolution as f32);
-                        let prev_x = (bulb_width * prev_theta.cos())
-                            .max(neck_half_width * sand_config.scale_factor);
-                        let prev_y =
-                            -neck_half_height - half_height + bulb_height * prev_theta.sin();
-                        if prev_y <= bottom_fill_line_y {
-                            let t = (bottom_fill_line_y - prev_y) / (y - prev_y);
-                            right_x_at_fill = prev_x * (1.0 - t) + x * t;
-                        }
-                    }
-                    break;
+            // Generate curved mound surface points from left to right
+            let surface_resolution = 20; // Number of points for the curved surface
+            for i in 0..=surface_resolution {
+                let t = i as f32 / surface_resolution as f32;
+                
+                // Calculate x position across the bulb width
+                let left_x = -bulb_width;
+                let right_x = bulb_width;
+                let x = left_x + (right_x - left_x) * t;
+                
+                // Only include points within the valid bulb bounds
+                let x_normalized = x.abs() / bulb_width;
+                if x_normalized <= 1.0 {
+                    let mound_height = bulb_height * 0.15 * bottom_fill_percent;
+                    let curved_y = base_bottom_fill_line_y + mound_height * (1.0 - x_normalized * x_normalized);
+                    
+                    // Ensure we stay within neck bounds
+                    let bounded_x = x.clamp(-bulb_width, bulb_width)
+                        .clamp(-neck_half_width * sand_config.scale_factor, 
+                               neck_half_width * sand_config.scale_factor);
+                    
+                    bottom_points.push([bounded_x, curved_y]);
                 }
             }
-
-            bottom_points.push([right_x_at_fill, bottom_fill_line_y]);
 
             // Right side down to bottom
             for i in (0..=body_config.bulb_curve_resolution).rev() {
@@ -680,7 +695,12 @@ impl HourglassMeshBuilder {
                 let x = (bulb_width * theta.cos()).max(neck_half_width * sand_config.scale_factor);
                 let y = -neck_half_height - half_height + bulb_height * theta.sin();
 
-                if y <= bottom_fill_line_y {
+                // Calculate curved sand surface
+                let x_normalized = x.abs() / bulb_width;
+                let mound_height = bulb_height * 0.15 * bottom_fill_percent;
+                let curved_fill_y = base_bottom_fill_line_y + mound_height * (1.0 - x_normalized * x_normalized);
+
+                if y <= curved_fill_y {
                     bottom_points.push([x, y]);
                 }
             }
