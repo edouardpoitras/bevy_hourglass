@@ -96,6 +96,28 @@ pub enum HourglassMeshSand {
     BottomBulb,
 }
 
+/// Component to track sand state for animations
+#[derive(Component, Debug, Clone)]
+pub struct HourglassMeshSandState {
+    pub fill_percent: f32,
+    pub body_config: HourglassMeshBodyConfig,
+    pub sand_config: HourglassMeshSandConfig,
+    /// Flag to track if the sand needs to be regenerated
+    pub needs_update: bool,
+}
+
+/// Type alias for the complex sand entities query to reduce type complexity
+type SandEntitiesQuery<'w, 's> = Query<
+    'w,
+    's,
+    (
+        Entity,
+        &'static HourglassMeshSand,
+        Option<&'static mut Mesh2d>,
+        Option<&'static MeshMaterial2d<ColorMaterial>>,
+    ),
+>;
+
 /// Builder for creating a mesh-based hourglass
 #[derive(Default)]
 pub struct HourglassMeshBuilder {
@@ -169,6 +191,16 @@ impl HourglassMeshBuilder {
                     .entity(hourglass_entity)
                     .add_child(top_sand)
                     .add_child(bottom_sand);
+
+                // Add sand state component for animation support
+                commands
+                    .entity(hourglass_entity)
+                    .insert(HourglassMeshSandState {
+                        fill_percent: sand_config.fill_percent,
+                        body_config: body_config.clone(),
+                        sand_config: sand_config.clone(),
+                        needs_update: false,
+                    });
             }
         }
 
@@ -360,6 +392,62 @@ impl HourglassMeshBuilder {
         body_config: &HourglassMeshBodyConfig,
         sand_config: &HourglassMeshSandConfig,
     ) -> (Entity, Entity) {
+        // Create material for sand
+        let sand_material = materials.add(sand_config.color);
+
+        // Generate top sand mesh
+        let top_points = Self::generate_top_sand_points(body_config, sand_config);
+        let top_sand_entity = if let Some(mesh) = Self::create_mesh_from_points(top_points) {
+            commands
+                .spawn((
+                    HourglassMeshSand::TopBulb,
+                    Mesh2d(meshes.add(mesh)),
+                    MeshMaterial2d(sand_material.clone()),
+                    Transform::from_xyz(0.0, 0.0, 0.1), // Slightly in front of body
+                ))
+                .id()
+        } else {
+            // Empty top bulb
+            commands
+                .spawn((
+                    HourglassMeshSand::TopBulb,
+                    Transform::from_xyz(0.0, 0.0, 0.1),
+                ))
+                .id()
+        };
+
+        // Generate bottom sand mesh
+        let bottom_points = Self::generate_bottom_sand_points(body_config, sand_config);
+        let bottom_sand_entity = if let Some(mesh) = Self::create_mesh_from_points(bottom_points) {
+            commands
+                .spawn((
+                    HourglassMeshSand::BottomBulb,
+                    Mesh2d(meshes.add(mesh)),
+                    MeshMaterial2d(sand_material),
+                    Transform::from_xyz(0.0, 0.0, 0.1), // Slightly in front of body
+                ))
+                .id()
+        } else {
+            // Empty bottom bulb
+            commands
+                .spawn((
+                    HourglassMeshSand::BottomBulb,
+                    Transform::from_xyz(0.0, 0.0, 0.1),
+                ))
+                .id()
+        };
+
+        (top_sand_entity, bottom_sand_entity)
+    }
+}
+
+/// Helper functions for sand mesh generation
+impl HourglassMeshBuilder {
+    /// Generate top bulb sand mesh points
+    fn generate_top_sand_points(
+        body_config: &HourglassMeshBodyConfig,
+        sand_config: &HourglassMeshSandConfig,
+    ) -> Vec<[f32; 2]> {
         let half_height = body_config.total_height / 2.0;
         let neck_half_width = body_config.neck_width / 2.0 * sand_config.scale_factor;
         let neck_half_height = body_config.neck_height / 2.0;
@@ -370,15 +458,9 @@ impl HourglassMeshBuilder {
         let bulb_height =
             body_config.bulb_radius * body_config.bulb_height_factor * sand_config.scale_factor;
 
-        // Create material for sand
-        let sand_material = materials.add(sand_config.color);
-
-        // === TOP BULB SAND ===
         let mut top_points: Vec<[f32; 2]> = Vec::new();
 
         // Calculate the fill line for the top bulb
-        // fill_percent = 1.0 means sand reaches the top of the bulb
-        // fill_percent = 0.0 means no sand in top bulb
         let top_bulb_base_y = neck_half_height;
         let top_bulb_top_y = neck_half_height + half_height;
         let fill_line_y =
@@ -422,7 +504,6 @@ impl HourglassMeshBuilder {
                 }
             }
 
-            // Add fill line across the top
             // Calculate right side x at fill line
             let mut right_x_at_fill = neck_half_width;
             for i in (0..=body_config.bulb_curve_resolution).rev() {
@@ -474,52 +555,27 @@ impl HourglassMeshBuilder {
             ]);
         }
 
-        // Create top sand mesh
-        let top_sand_entity = if !top_points.is_empty() {
-            let num_vertices = top_points.len();
-            let points_3d = top_points
-                .iter()
-                .map(|p| [p[0], p[1], 0.0])
-                .collect::<Vec<_>>();
+        top_points
+    }
 
-            let coords: Vec<f32> = top_points.iter().flat_map(|p| vec![p[0], p[1]]).collect();
-            let hole_indices: Vec<usize> = Vec::new();
-            let indices: Vec<u32> = earcut(&coords, &hole_indices, 2)
-                .unwrap()
-                .into_iter()
-                .map(|i| i as u32)
-                .collect();
+    /// Generate bottom bulb sand mesh points
+    fn generate_bottom_sand_points(
+        body_config: &HourglassMeshBodyConfig,
+        sand_config: &HourglassMeshSandConfig,
+    ) -> Vec<[f32; 2]> {
+        let half_height = body_config.total_height / 2.0;
+        let neck_half_width = body_config.neck_width / 2.0 * sand_config.scale_factor;
+        let neck_half_height = body_config.neck_height / 2.0;
 
-            let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, Default::default());
-            mesh.insert_indices(Indices::U32(indices));
-            mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points_3d);
-            mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 1.0]; num_vertices]);
-            mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; num_vertices]);
+        // Calculate effective bulb dimensions with sand scaling
+        let bulb_width =
+            body_config.bulb_radius * body_config.bulb_width_factor * sand_config.scale_factor;
+        let bulb_height =
+            body_config.bulb_radius * body_config.bulb_height_factor * sand_config.scale_factor;
 
-            commands
-                .spawn((
-                    HourglassMeshSand::TopBulb,
-                    Mesh2d(meshes.add(mesh)),
-                    MeshMaterial2d(sand_material.clone()),
-                    Transform::from_xyz(0.0, 0.0, 0.1), // Slightly in front of body
-                ))
-                .id()
-        } else {
-            // Empty top bulb
-            commands
-                .spawn((
-                    HourglassMeshSand::TopBulb,
-                    Transform::from_xyz(0.0, 0.0, 0.1),
-                ))
-                .id()
-        };
-
-        // === BOTTOM BULB SAND ===
         let mut bottom_points: Vec<[f32; 2]> = Vec::new();
 
         // Calculate the fill line for the bottom bulb
-        // (1.0 - fill_percent) = 0.0 means no sand in bottom
-        // (1.0 - fill_percent) = 1.0 means bottom bulb is full
         let bottom_fill_percent = 1.0 - sand_config.fill_percent;
         let bottom_bulb_base_y = -neck_half_height - half_height;
         let bottom_bulb_top_y = -neck_half_height;
@@ -527,11 +583,12 @@ impl HourglassMeshBuilder {
             bottom_bulb_base_y + (bottom_bulb_top_y - bottom_bulb_base_y) * bottom_fill_percent;
 
         if bottom_fill_percent > 0.0 {
-            // Start from bottom left
+            // Start from bottom left of the bulb
             for i in 0..=body_config.bulb_curve_resolution {
                 let theta = std::f32::consts::PI / 2.0
                     * (i as f32 / body_config.bulb_curve_resolution as f32);
-                let x = (-bulb_width * theta.cos()).min(-neck_half_width);
+                let x =
+                    (-bulb_width * theta.cos()).min(-neck_half_width * sand_config.scale_factor);
                 let y = -neck_half_height - half_height + bulb_height * theta.sin();
 
                 if y <= bottom_fill_line_y {
@@ -541,7 +598,8 @@ impl HourglassMeshBuilder {
                     if i > 0 {
                         let prev_theta = std::f32::consts::PI / 2.0
                             * ((i - 1) as f32 / body_config.bulb_curve_resolution as f32);
-                        let prev_x = (-bulb_width * prev_theta.cos()).min(-neck_half_width);
+                        let prev_x = (-bulb_width * prev_theta.cos())
+                            .min(-neck_half_width * sand_config.scale_factor);
                         let prev_y =
                             -neck_half_height - half_height + bulb_height * prev_theta.sin();
                         if prev_y <= bottom_fill_line_y {
@@ -554,19 +612,20 @@ impl HourglassMeshBuilder {
                 }
             }
 
-            // Add fill line across
-            let mut right_x_at_fill = neck_half_width;
+            // Calculate right side intersection
+            let mut right_x_at_fill = neck_half_width * sand_config.scale_factor;
             for i in 0..=body_config.bulb_curve_resolution {
                 let theta = std::f32::consts::PI / 2.0
                     * (i as f32 / body_config.bulb_curve_resolution as f32);
-                let x = (bulb_width * theta.cos()).max(neck_half_width);
+                let x = (bulb_width * theta.cos()).max(neck_half_width * sand_config.scale_factor);
                 let y = -neck_half_height - half_height + bulb_height * theta.sin();
 
                 if y > bottom_fill_line_y {
                     if i > 0 {
                         let prev_theta = std::f32::consts::PI / 2.0
                             * ((i - 1) as f32 / body_config.bulb_curve_resolution as f32);
-                        let prev_x = (bulb_width * prev_theta.cos()).max(neck_half_width);
+                        let prev_x = (bulb_width * prev_theta.cos())
+                            .max(neck_half_width * sand_config.scale_factor);
                         let prev_y =
                             -neck_half_height - half_height + bulb_height * prev_theta.sin();
                         if prev_y <= bottom_fill_line_y {
@@ -584,7 +643,7 @@ impl HourglassMeshBuilder {
             for i in (0..=body_config.bulb_curve_resolution).rev() {
                 let theta = std::f32::consts::PI / 2.0
                     * (i as f32 / body_config.bulb_curve_resolution as f32);
-                let x = (bulb_width * theta.cos()).max(neck_half_width);
+                let x = (bulb_width * theta.cos()).max(neck_half_width * sand_config.scale_factor);
                 let y = -neck_half_height - half_height + bulb_height * theta.sin();
 
                 if y <= bottom_fill_line_y {
@@ -593,49 +652,132 @@ impl HourglassMeshBuilder {
             }
         }
 
-        // Create bottom sand mesh
-        let bottom_sand_entity = if !bottom_points.is_empty() {
-            let num_vertices = bottom_points.len();
-            let points_3d = bottom_points
-                .iter()
-                .map(|p| [p[0], p[1], 0.0])
-                .collect::<Vec<_>>();
+        bottom_points
+    }
 
-            let coords: Vec<f32> = bottom_points
-                .iter()
-                .flat_map(|p| vec![p[0], p[1]])
-                .collect();
-            let hole_indices: Vec<usize> = Vec::new();
-            let indices: Vec<u32> = earcut(&coords, &hole_indices, 2)
-                .unwrap()
-                .into_iter()
-                .map(|i| i as u32)
-                .collect();
+    /// Create a mesh from a set of 2D points
+    fn create_mesh_from_points(points: Vec<[f32; 2]>) -> Option<Mesh> {
+        if points.is_empty() {
+            return None;
+        }
 
-            let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, Default::default());
-            mesh.insert_indices(Indices::U32(indices));
-            mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points_3d);
-            mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 1.0]; num_vertices]);
-            mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; num_vertices]);
+        let num_vertices = points.len();
+        let points_3d = points.iter().map(|p| [p[0], p[1], 0.0]).collect::<Vec<_>>();
 
-            commands
-                .spawn((
-                    HourglassMeshSand::BottomBulb,
-                    Mesh2d(meshes.add(mesh)),
-                    MeshMaterial2d(sand_material),
-                    Transform::from_xyz(0.0, 0.0, 0.1), // Slightly in front of body
-                ))
-                .id()
-        } else {
-            // Empty bottom bulb
-            commands
-                .spawn((
-                    HourglassMeshSand::BottomBulb,
-                    Transform::from_xyz(0.0, 0.0, 0.1),
-                ))
-                .id()
-        };
+        let coords: Vec<f32> = points.iter().flat_map(|p| vec![p[0], p[1]]).collect();
+        let hole_indices: Vec<usize> = Vec::new();
 
-        (top_sand_entity, bottom_sand_entity)
+        match earcut(&coords, &hole_indices, 2) {
+            Ok(triangles) => {
+                let indices: Vec<u32> = triangles.into_iter().map(|i| i as u32).collect();
+
+                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, Default::default());
+                mesh.insert_indices(Indices::U32(indices));
+                mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points_3d);
+                mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 1.0]; num_vertices]);
+                mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; num_vertices]);
+
+                Some(mesh)
+            }
+            Err(_) => None,
+        }
+    }
+}
+
+/// Update sand fill percentage
+pub fn update_sand_fill_percent(sand_state: &mut HourglassMeshSandState, new_fill_percent: f32) {
+    let clamped_fill_percent = new_fill_percent.clamp(0.0, 1.0);
+    if (sand_state.fill_percent - clamped_fill_percent).abs() > f32::EPSILON {
+        sand_state.fill_percent = clamped_fill_percent;
+        sand_state.sand_config.fill_percent = clamped_fill_percent;
+        sand_state.needs_update = true;
+    }
+}
+
+/// System to update sand meshes when fill percentage changes
+pub fn update_mesh_hourglass_sand(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut sand_query: Query<(Entity, &mut HourglassMeshSandState), With<HourglassMesh>>,
+    children_query: Query<&Children>,
+    mut sand_entities_query: SandEntitiesQuery,
+) {
+    for (hourglass_entity, mut sand_state) in sand_query.iter_mut() {
+        if !sand_state.needs_update {
+            continue;
+        }
+
+        sand_state.needs_update = false;
+
+        // Find sand child entities
+        if let Ok(children) = children_query.get(hourglass_entity) {
+            for child in children.iter() {
+                if let Ok((entity, sand_type, mesh_handle_opt, material_opt)) =
+                    sand_entities_query.get_mut(child)
+                {
+                    match sand_type {
+                        HourglassMeshSand::TopBulb => {
+                            let points = HourglassMeshBuilder::generate_top_sand_points(
+                                &sand_state.body_config,
+                                &sand_state.sand_config,
+                            );
+                            if let Some(new_mesh) =
+                                HourglassMeshBuilder::create_mesh_from_points(points)
+                            {
+                                let mesh_handle = meshes.add(new_mesh);
+                                if let Some(mut existing_mesh) = mesh_handle_opt {
+                                    existing_mesh.0 = mesh_handle;
+                                } else {
+                                    // Add mesh component back if it was removed
+                                    let material = if let Some(mat) = material_opt {
+                                        mat.clone()
+                                    } else {
+                                        MeshMaterial2d(materials.add(sand_state.sand_config.color))
+                                    };
+                                    commands
+                                        .entity(entity)
+                                        .insert((Mesh2d(mesh_handle), material));
+                                }
+                            } else {
+                                // Empty mesh - remove the mesh component if it exists
+                                if mesh_handle_opt.is_some() {
+                                    commands.entity(entity).remove::<Mesh2d>();
+                                }
+                            }
+                        }
+                        HourglassMeshSand::BottomBulb => {
+                            let points = HourglassMeshBuilder::generate_bottom_sand_points(
+                                &sand_state.body_config,
+                                &sand_state.sand_config,
+                            );
+                            if let Some(new_mesh) =
+                                HourglassMeshBuilder::create_mesh_from_points(points)
+                            {
+                                let mesh_handle = meshes.add(new_mesh);
+                                if let Some(mut existing_mesh) = mesh_handle_opt {
+                                    existing_mesh.0 = mesh_handle;
+                                } else {
+                                    // Add mesh component back if it was removed
+                                    let material = if let Some(mat) = material_opt {
+                                        mat.clone()
+                                    } else {
+                                        MeshMaterial2d(materials.add(sand_state.sand_config.color))
+                                    };
+                                    commands
+                                        .entity(entity)
+                                        .insert((Mesh2d(mesh_handle), material));
+                                }
+                            } else {
+                                // Empty mesh - remove the mesh component if it exists
+                                if mesh_handle_opt.is_some() {
+                                    commands.entity(entity).remove::<Mesh2d>();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
