@@ -1,5 +1,6 @@
 //! Mesh-based hourglass implementation with composable parts.
 
+use crate::components::Hourglass;
 use bevy::{
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
@@ -7,7 +8,6 @@ use bevy::{
 };
 use earcutr::earcut;
 use std::time::Duration;
-use crate::components::Hourglass;
 
 /// Configuration for the hourglass body (the glass part)
 #[derive(Clone, Debug)]
@@ -121,6 +121,14 @@ type SandEntitiesQuery<'w, 's> = Query<
     ),
 >;
 
+/// Type alias for the complex mesh hourglass query to reduce type complexity
+type MeshHourglassQuery<'w, 's> = Query<
+    'w,
+    's,
+    (&'static Hourglass, &'static mut HourglassMeshSandState),
+    (With<HourglassMesh>, Changed<Hourglass>),
+>;
+
 /// Builder for creating a mesh-based hourglass
 #[derive(Default)]
 pub struct HourglassMeshBuilder {
@@ -176,13 +184,13 @@ impl HourglassMeshBuilder {
     ) -> Entity {
         // Create parent entity for the hourglass
         let mut entity_commands = commands.spawn((HourglassMesh, self.transform));
-        
+
         // Add automatic timing component if specified
         if let Some(duration) = self.timing {
             let hourglass = Hourglass::new(duration);
             entity_commands.insert(hourglass);
         }
-        
+
         let hourglass_entity = entity_commands.id();
 
         // Add body if configured
@@ -809,12 +817,7 @@ pub fn update_mesh_hourglass_sand(
 }
 
 /// System to sync Hourglass component state with HourglassMeshSandState
-pub fn sync_mesh_hourglass_with_timer(
-    mut mesh_query: Query<
-        (&Hourglass, &mut HourglassMeshSandState),
-        (With<HourglassMesh>, Changed<Hourglass>),
-    >,
-) {
+pub fn sync_mesh_hourglass_with_timer(mut mesh_query: MeshHourglassQuery) {
     for (hourglass, mut sand_state) in mesh_query.iter_mut() {
         // Calculate fill percentage based on hourglass state
         // When not flipped: upper_chamber represents sand in top bulb
