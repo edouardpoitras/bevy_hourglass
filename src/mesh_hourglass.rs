@@ -3,6 +3,7 @@
 use bevy::{
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
+    sprite::AlphaMode2d,
 };
 use earcutr::earcut;
 
@@ -31,7 +32,7 @@ impl Default for HourglassMeshBodyConfig {
             neck_width: 12.0,
             neck_height: 7.0,
             neck_curve_resolution: 5,
-            color: Color::srgb(0.8, 0.5, 0.3),
+            color: Color::srgba(0.85, 0.95, 1.0, 0.2), // Light blue glass with transparency
         }
     }
 }
@@ -49,7 +50,7 @@ impl Default for HourglassMeshPlatesConfig {
         Self {
             width: 165.0,
             height: 10.0,
-            color: Color::srgb(0.0, 0.0, 0.0),
+            color: Color::srgb(0.6, 0.4, 0.2), // Wood brown color
         }
     }
 }
@@ -309,11 +310,18 @@ impl HourglassMeshBuilder {
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
 
+        // Create glass material with transparency
+        let glass_material = materials.add(ColorMaterial {
+            color: config.color,
+            alpha_mode: AlphaMode2d::Blend,
+            ..default()
+        });
+
         commands
             .spawn((
                 HourglassMeshBody,
                 Mesh2d(meshes.add(mesh)),
-                MeshMaterial2d(materials.add(config.color)),
+                MeshMaterial2d(glass_material),
             ))
             .id()
     }
