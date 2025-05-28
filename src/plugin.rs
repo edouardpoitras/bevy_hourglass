@@ -3,9 +3,6 @@
 use crate::events::*;
 use crate::mesh_hourglass::{sync_mesh_hourglass_with_timer, update_mesh_hourglass_sand};
 use crate::resources::HourglassConfig;
-use crate::sprite_hourglass::{
-    update_bottom_sand_sprite, update_container_sprite, update_top_sand_sprite,
-};
 use crate::systems::update_hourglasses;
 use bevy::prelude::*;
 
@@ -22,13 +19,8 @@ impl Plugin for HourglassPlugin {
         app.add_event::<HourglassFlipStartEvent>()
             .add_event::<HourglassEmptyEvent>();
 
-        // Add all systems individually to avoid configuration issues
+        // Add core hourglass update system
         app.add_systems(Update, update_hourglasses);
-
-        // Sprite-based visualization systems
-        app.add_systems(Update, update_container_sprite);
-        app.add_systems(Update, update_top_sand_sprite);
-        app.add_systems(Update, update_bottom_sand_sprite);
 
         // Mesh-based visualization systems
         app.add_systems(

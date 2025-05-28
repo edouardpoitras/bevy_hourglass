@@ -2,8 +2,8 @@
 
 use bevy::prelude::*;
 use bevy_hourglass::{
-    Hourglass, HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
-    HourglassMeshSandConfig, HourglassPlugin,
+    BulbStyle, Hourglass, HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
+    HourglassMeshSandConfig, HourglassPlugin, NeckStyle,
 };
 use std::time::Duration;
 
@@ -99,13 +99,17 @@ fn setup(
     let hourglass_entity = HourglassMeshBuilder::new(Transform::from_xyz(0.0, 0.0, 0.0))
         .with_body(HourglassMeshBodyConfig {
             total_height: 200.0,
-            bulb_radius: 100.0,
-            bulb_width_factor: 0.75,
-            bulb_height_factor: 1.0,
-            bulb_curve_resolution: 20,
-            neck_width: 12.0,
-            neck_height: 7.0,
-            neck_curve_resolution: 5,
+            bulb_style: BulbStyle::Circular {
+                curvature: 1.0,
+                width_factor: 0.75,
+                curve_resolution: 20,
+            },
+            neck_style: NeckStyle::Curved {
+                curvature: 0.2,
+                width: 12.0,
+                height: 8.0,
+                curve_resolution: 5,
+            },
             color: Color::srgba(0.85, 0.95, 1.0, 0.2),
         })
         .with_plates(HourglassMeshPlatesConfig {
@@ -115,9 +119,8 @@ fn setup(
         })
         .with_sand(HourglassMeshSandConfig {
             color: Color::srgb(0.9, 0.8, 0.6),
-            fill_percent: 1.0,       // Start with full top bulb
-            scale_factor: 0.95,      // Sand is 95% of glass size
-            neck_scale_factor: 0.35, // Sand is 35% of neck size
+            fill_percent: 1.0, // Start with full top bulb
+            wall_offset: 8.0,  // 8 pixels from glass walls
         })
         .with_timing(Duration::from_secs(30)) // 30-second timer for automatic animation
         .build(&mut commands, &mut meshes, &mut materials);

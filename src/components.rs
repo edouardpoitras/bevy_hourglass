@@ -17,10 +17,18 @@ pub struct Hourglass {
     pub flipped: bool,
     /// Whether the hourglass is currently in the process of flipping
     pub flipping: bool,
+    /// Duration of flip animation in seconds
+    pub flip_duration: f32,
+    /// Current flip progress (0.0 to 1.0)
+    pub flip_progress: f32,
+    /// Whether this hourglass should auto-flip when empty
+    pub auto_flip_when_empty: bool,
 
     // Rotation properties
     /// Current rotation in radians
     pub current_rotation: f32,
+    /// Target rotation for flip animation
+    pub target_rotation: f32,
 
     // Visual properties
     /// Color of the container
@@ -50,9 +58,13 @@ impl Default for Hourglass {
             // State properties
             flipped: false,
             flipping: false,
+            flip_duration: 1.0,
+            flip_progress: 0.0,
+            auto_flip_when_empty: false,
 
             // Rotation properties
             current_rotation: 0.0,
+            target_rotation: 0.0,
 
             // Visual properties
             container_color: Color::srgb(0.8, 0.8, 0.8),
@@ -89,36 +101,52 @@ impl Hourglass {
 
     /// Update the hourglass state
     pub fn update(&mut self, delta: Duration) {
-        // Update sand levels and remaining time
-        if self.running {
+        // Handle flip animation first
+        if self.flipping {
+            self.flip_progress += delta.as_secs_f32() / self.flip_duration;
+
+            if self.flip_progress >= 1.0 {
+                // Flip animation complete
+                self.flip_progress = 1.0;
+                self.flipping = false;
+
+                // Snap back to upright orientation
+                self.current_rotation = 0.0;
+                self.target_rotation = 0.0;
+
+                // Invert the sand fill percentages (flip effect)
+                std::mem::swap(&mut self.upper_chamber, &mut self.lower_chamber);
+
+                // Invert the timer (if 2s left in a 10s timer, it should read 8s after flipping)
+                self.remaining_time = self.total_time - self.remaining_time;
+
+                // Always ensure the timer is running if there's sand in the upper chamber
+                if !self.running && self.upper_chamber > 0.0 {
+                    self.running = true;
+                }
+            } else {
+                // Interpolate rotation during flip (always from 0 to PI)
+                self.current_rotation = self.flip_progress * std::f32::consts::PI;
+            }
+        }
+
+        // Only update sand levels and time if not flipping
+        if self.running && !self.flipping {
             // Update sand flow
             self.update_sand(delta);
 
             // Update remaining time based on sand in the upper chamber
-            // Since we swap chambers when flipping, upper is always physically at the top
             self.remaining_time =
                 Duration::from_secs_f32(self.upper_chamber * self.total_time.as_secs_f32());
 
-            // Check if the hourglass is empty
+            // Check if the hourglass is empty (no sand in the upper chamber)
             if self.upper_chamber <= 0.0 {
                 self.running = false;
-            }
-        }
 
-        // For flipping animation, simply update the state immediately
-        if self.flipping {
-            self.flipping = false;
-            self.flipped = !self.flipped;
-
-            // Invert the timer (if 2s left in a 10s timer, it should read 8s after flipping)
-            self.remaining_time = self.total_time - self.remaining_time;
-
-            // Swap chambers when flipped - this ensures upper is always physically at the top
-            std::mem::swap(&mut self.upper_chamber, &mut self.lower_chamber);
-
-            // Always ensure the timer is running if there's sand in the upper chamber
-            if !self.running && self.upper_chamber > 0.0 {
-                self.running = true;
+                // Auto-flip if enabled
+                if self.auto_flip_when_empty {
+                    self.flip();
+                }
             }
         }
     }
@@ -128,11 +156,10 @@ impl Hourglass {
         // Calculate the amount to transfer based on flow rate and delta time
         let transfer_amount = self.flow_rate * delta.as_secs_f32();
 
-        // Sand always flows from upper to lower chamber (gravity pulls down)
-        // Since we swap chambers when flipping, upper is always physically at the top
-        let actual_transfer = transfer_amount.min(self.upper_chamber);
-        self.upper_chamber -= actual_transfer;
-        self.lower_chamber += actual_transfer;
+        // Sand always flows from upper to lower (gravity)
+        let transfer = transfer_amount.min(self.upper_chamber);
+        self.upper_chamber -= transfer;
+        self.lower_chamber += transfer;
 
         // Ensure values stay in valid range
         self.upper_chamber = self.upper_chamber.clamp(0.0, 1.0);
@@ -143,6 +170,14 @@ impl Hourglass {
     pub fn flip(&mut self) {
         if !self.flipping {
             self.flipping = true;
+            self.flip_progress = 0.0;
+            // Always flip 180 degrees (PI radians) from current upright position
+            self.target_rotation = std::f32::consts::PI;
         }
+    }
+
+    /// Check if the hourglass is ready to be flipped (not currently flipping)
+    pub fn can_flip(&self) -> bool {
+        !self.flipping
     }
 }

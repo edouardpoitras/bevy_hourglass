@@ -28,3 +28,6 @@ web-sys = { version = "0.3", features = [
 
 [features]
 default = []
+
+[profile.dev.package."*"]
+opt-level = 3  # Optimize all dependencies as in release builds

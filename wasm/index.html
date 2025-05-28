@@ -24,13 +24,12 @@
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100vh;
+            min-height: 100vh;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            overflow-x: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             color: white;
         }
@@ -87,10 +86,43 @@
             color: #ff8a80;
         }
         
+        .demo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            padding: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .demo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+        
+        .demo-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 0;
+        }
+        
+        .demo-description {
+            font-size: 1rem;
+            text-align: center;
+            opacity: 0.9;
+            margin: 0;
+            max-width: 600px;
+        }
+        
         canvas {
             background: radial-gradient(circle, #2c2c2c 0%, #1a1a1a 100%);
             max-width: 100%;
-            max-height: 80vh;
+            max-height: 70vh;
             border-radius: 8px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
@@ -100,10 +132,6 @@
         }
         
         .github-link {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
             background: rgba(100, 181, 246, 0.2);
             padding: 8px 16px;
             border-radius: 20px;
@@ -113,11 +141,12 @@
             border: 1px solid rgba(100, 181, 246, 0.3);
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            margin: 40px 0 20px 0;
         }
         
         .github-link:hover {
             background: rgba(100, 181, 246, 0.3);
-            transform: translateX(-50%) translateY(-2px);
+            transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(100, 181, 246, 0.2);
         }
         
@@ -135,12 +164,17 @@
                 margin: 1rem;
             }
             
-            .github-link {
-                position: relative;
-                bottom: auto;
-                left: auto;
-                transform: none;
-                margin-top: 20px;
+            .demo-container {
+                padding: 10px;
+                gap: 30px;
+            }
+            
+            .demo-title {
+                font-size: 1.3rem;
+            }
+            
+            .demo-description {
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -152,7 +186,7 @@
     </div>
     
     <div id="loading">
-        <div>⧗ Loading Bevy Hourglass...</div>
+        <div>⧗ Loading Bevy Hourglass Demos...</div>
         <div style="font-size: 0.8em; margin-top: 10px; opacity: 0.8;">
             Built with Rust & Bevy, compiled to WebAssembly
         </div>
@@ -160,7 +194,7 @@
     
     <div id="error">
         <h3>Failed to Load</h3>
-        <p>There was an error loading the WebAssembly application.</p>
+        <p>There was an error loading the WebAssembly applications.</p>
         <details>
             <summary>Error Details</summary>
             <div id="error-details"></div>
@@ -173,13 +207,28 @@
         </p>
     </div>
     
+    <div id="demos" class="demo-container hidden">
+        <div class="demo-section">
+            <h2 class="demo-title">2D Mesh Hourglass with UI</h2>
+            <p class="demo-description">Interactive hourglass with customizable properties - click the buttons to control the hourglass behavior, adjust timing, and experiment with different visual styles.</p>
+            <div id="demo1-container"></div>
+        </div>
+        
+        <div class="demo-section">
+            <h2 class="demo-title">Auto-Flip Hourglass Mayhem</h2>
+            <p class="demo-description">A chaotic display of 30 hourglasses with randomized colors, sizes, shapes, and flip durations - watch as they all flip at different intervals creating a mesmerizing effect.</p>
+            <div id="demo2-container"></div>
+        </div>
+    </div>
+    
     <a href="https://github.com/edouardpoitras/bevy_hourglass" target="_blank" class="github-link">
         🔗 View Source Code
     </a>
     
     <script type="module">
-        // Import our WASM module
-        import init from './2d_mesh_hourglass_with_ui.js';
+        // Import our WASM modules
+        import init2dMesh from './2d_mesh_hourglass_with_ui.js';
+        import initAutoFlip from './auto_flip_mayhem.js';
         
         // Function to handle errors with better user feedback
         function handleError(e) {
@@ -192,17 +241,47 @@
             errorEl.style.display = 'block';
         }
         
-        // Main async function to load WASM
+        // Function to move canvas to the correct container after Bevy creates it
+        function moveCanvasToContainer(containerId) {
+            // Bevy creates canvas elements and appends them to body
+            // We need to move them to our designated containers
+            const canvases = document.querySelectorAll('body > canvas');
+            if (canvases.length > 0) {
+                const canvas = canvases[canvases.length - 1]; // Get the most recently created canvas
+                const container = document.getElementById(containerId);
+                if (container && canvas) {
+                    container.appendChild(canvas);
+                    console.log(`Moved canvas to ${containerId}`);
+                }
+            }
+        }
+        
+        // Main async function to load both WASM modules
         async function run() {
             try {
-                console.log('🚀 Starting Bevy Hourglass WASM demo...');
+                console.log('🚀 Starting Bevy Hourglass WASM demos...');
                 
-                // Initialize the WASM module
-                await init();
+                // Show demos container first
+                document.getElementById('demos').classList.remove('hidden');
                 
-                // Hide loading screen once loaded
+                // Load first demo
+                console.log('🚀 Starting 2D Mesh Hourglass with UI...');
+                await init2dMesh();
+                moveCanvasToContainer('demo1-container');
+                console.log('✅ 2D Mesh Hourglass with UI loaded successfully!');
+                
+                // Small delay to ensure first canvas is properly positioned
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Load second demo
+                console.log('🚀 Starting Auto-Flip Hourglass Mayhem...');
+                await initAutoFlip();
+                moveCanvasToContainer('demo2-container');
+                console.log('✅ Auto-Flip Hourglass Mayhem loaded successfully!');
+                
+                // Hide loading screen
                 document.getElementById('loading').classList.add('hidden');
-                console.log('✅ Bevy Hourglass loaded successfully!');
+                console.log('✅ All Bevy Hourglass demos loaded successfully!');
                 
             } catch (e) {
                 handleError(e);
