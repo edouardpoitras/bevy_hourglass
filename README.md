@@ -8,30 +8,55 @@
 
 A flexible hourglass plugin for Bevy applications.
 
-**Website:** [https://github.com/edouardpoitras/bevy_hourglass](https://github.com/edouardpoitras/bevy_hourglass)
+**Website:** [https://edouardpoitras.github.io/bevy_hourglass/](https://edouardpoitras.github.io/bevy_hourglass/)
 
 ## Features
 
-- Customizable visual hourglass timer
-- Sprite-based rendering
-- 2D mesh-based hourglass with detailed geometry
-- Configurable duration
+- Customizable visual hourglass timer with detailed mesh geometry
+- Multiple hourglass styles: straight-sided, curved bulbs, various neck styles
+- Flexible builder pattern for easy configuration
+- Auto-flip functionality for continuous animation
+- Configurable flip animations with custom durations
 - Events for state changes (flipping, emptying)
 - WebAssembly (WASM) support
 
 ## Examples
 
-### 2D Mesh Hourglass Example
+### Basic 2D Mesh Hourglass
 
-Run the 2D mesh hourglass example with:
+Run the basic 2D mesh hourglass example:
 
 ```bash
 cargo run --example 2d_mesh_hourglass
 ```
 
-### WebAssembly Example
+### Auto-Flip Mayhem
 
-This project includes WebAssembly support for the 2D mesh hourglass example, allowing you to run the hourglass in a web browser.
+See multiple hourglasses with random configurations and auto-flipping:
+
+```bash
+cargo run --example auto_flip_mayhem
+```
+
+### Interactive Flip Demo
+
+Control hourglass flipping with keyboard input:
+
+```bash
+cargo run --example flip_demo
+```
+
+### Curve Styles Demo
+
+Explore different hourglass shapes and styles:
+
+```bash
+cargo run --example curve_styles_demo
+```
+
+### WebAssembly Examples
+
+This project includes WebAssembly support, allowing you to run hourglasses in a web browser.
 
 #### Building for WASM
 
@@ -48,10 +73,10 @@ This project includes WebAssembly support for the 2D mesh hourglass example, all
 This script will:
 - Install the necessary tools (wasm-bindgen-cli) if not already installed
 - Add the wasm32-unknown-unknown target if needed
-- Build the 2D mesh hourglass example for the WASM target
+- Build examples for the WASM target (currently includes `2d_mesh_hourglass` and `auto_flip_mayhem`)
 - Generate JavaScript bindings
 
-#### Running the WASM Example
+#### Running the WASM Examples
 
 After building, you can serve the WASM files with a local HTTP server:
 
@@ -61,24 +86,15 @@ Using Python's built-in HTTP server:
 cd wasm && python -m http.server 8080
 ```
 
-Then open http://localhost:8080 in your web browser.
+Then open http://localhost:8080 in your web browser to access the available examples.
 
 ## Usage
-
-Add the dependency to your Cargo.toml:
-
-```toml
-[dependencies]
-bevy_hourglass = "0.1.0"
-```
-
-In your Bevy application:
 
 ```rust
 use bevy::prelude::*;
 use bevy_hourglass::{
-    HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
-    HourglassMeshSandConfig, HourglassPlugin,
+    BulbStyle, HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
+    HourglassMeshSandConfig, HourglassPlugin, NeckStyle,
 };
 use std::time::Duration;
 
@@ -96,17 +112,21 @@ fn setup(
 ) {
     commands.spawn(Camera2d::default());
 
-    // Create a 2D mesh hourglass with detailed geometry
+    // Create a 2D mesh hourglass with detailed geometry using the new builder pattern
     HourglassMeshBuilder::new(Transform::from_xyz(0.0, 0.0, 0.0))
         .with_body(HourglassMeshBodyConfig {
             total_height: 200.0,
-            bulb_radius: 100.0,
-            bulb_width_factor: 0.75,
-            bulb_height_factor: 1.0,
-            bulb_curve_resolution: 20,
-            neck_width: 12.0,
-            neck_height: 7.0,
-            neck_curve_resolution: 5,
+            bulb_style: BulbStyle::Circular {
+                curvature: 1.0,
+                width_factor: 0.75,
+                curve_resolution: 20,
+            },
+            neck_style: NeckStyle::Curved {
+                curvature: 0.2,
+                width: 12.0,
+                height: 8.0,
+                curve_resolution: 5,
+            },
             color: Color::srgba(0.85, 0.95, 1.0, 0.2),
         })
         .with_plates(HourglassMeshPlatesConfig {
@@ -116,11 +136,12 @@ fn setup(
         })
         .with_sand(HourglassMeshSandConfig {
             color: Color::srgb(0.9, 0.8, 0.6),
-            fill_percent: 1.0,       // Start with full top bulb
-            scale_factor: 0.95,      // Sand is 95% of glass size
-            neck_scale_factor: 0.35, // Sand is 35% of neck size
+            fill_percent: 1.0,  // Start with full top bulb
+            wall_offset: 8.0,   // Distance from glass walls
         })
         .with_timing(Duration::from_secs(30)) // 30-second timer for automatic animation
+        .with_auto_flip(true)                 // Enable auto-flipping when empty
+        .with_flip_duration(0.5)              // 0.5 second flip animation
         .build(&mut commands, &mut meshes, &mut materials);
 }
 ```
@@ -129,7 +150,7 @@ fn setup(
 
 |bevy|bevy_hourglass|
 |---|---|
-|0.16|0.1|
+|0.16|0.2|
 
 ## License
 
