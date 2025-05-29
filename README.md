@@ -10,6 +10,8 @@ A flexible hourglass plugin for Bevy applications.
 
 **Website:** [https://edouardpoitras.github.io/bevy_hourglass/](https://edouardpoitras.github.io/bevy_hourglass/)
 
+![animation](examples/auto_flip_mayhem.gif)
+
 ## Features
 
 - Customizable visual hourglass timer with detailed mesh geometry
