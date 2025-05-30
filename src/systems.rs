@@ -11,11 +11,11 @@ pub fn update_hourglasses(
     mut empty_events: EventWriter<HourglassEmptyEvent>,
     mut flip_start_events: EventWriter<HourglassFlipStartEvent>,
 ) {
-    let delta = time.delta();
+    let delta = time.delta_secs();
 
     for (entity, mut hourglass, mut transform) in query.iter_mut() {
         // Check if the hourglass was running and had time remaining before the update
-        let was_running = hourglass.running && hourglass.remaining_time > std::time::Duration::ZERO;
+        let was_running = hourglass.running && hourglass.remaining_time > 0.0;
 
         // Handle flip events if the hourglass is starting to flip
         if hourglass.flipping {
@@ -30,7 +30,7 @@ pub fn update_hourglasses(
         transform.rotation = Quat::from_rotation_z(hourglass.current_rotation);
 
         // Check if the hourglass just became empty
-        if was_running && hourglass.remaining_time == std::time::Duration::ZERO {
+        if was_running && hourglass.remaining_time == 0.0 {
             empty_events.write(HourglassEmptyEvent {
                 entity,
                 total_time: hourglass.total_time,

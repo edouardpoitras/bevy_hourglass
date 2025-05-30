@@ -5,7 +5,6 @@ use bevy_hourglass::{
     BulbStyle, HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
     HourglassMeshSandConfig, HourglassPlugin, NeckStyle,
 };
-use std::time::Duration;
 
 fn main() {
     App::new()
@@ -48,6 +47,6 @@ fn setup(
             fill_percent: 1.0,
             wall_offset: 4.0,
         })
-        .with_timing(Duration::from_secs(10)) // 10-second timer for automatic animation
+        .with_timing(10.0) // 10-second timer for automatic animation
         .build(&mut commands, &mut meshes, &mut materials);
 }

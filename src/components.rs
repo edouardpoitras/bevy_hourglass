@@ -1,14 +1,13 @@
 use bevy::prelude::*;
-use std::time::Duration;
 
 /// Core component for an hourglass
 #[derive(Component, Debug, Clone)]
 pub struct Hourglass {
     // Timer properties
-    /// Total time the hourglass can measure
-    pub total_time: Duration,
-    /// Remaining time in the hourglass
-    pub remaining_time: Duration,
+    /// Total time the hourglass can measure (in seconds)
+    pub total_time: f32,
+    /// Remaining time in the hourglass (in seconds)
+    pub remaining_time: f32,
     /// Whether the hourglass is currently running
     pub running: bool,
 
@@ -51,8 +50,8 @@ impl Default for Hourglass {
     fn default() -> Self {
         Self {
             // Timer properties
-            total_time: Duration::from_secs(60),
-            remaining_time: Duration::from_secs(60),
+            total_time: 60.0,
+            remaining_time: 60.0,
             running: true,
 
             // State properties
@@ -80,13 +79,13 @@ impl Default for Hourglass {
 }
 
 impl Hourglass {
-    /// Create a new hourglass with the specified total time
-    pub fn new(total_time: Duration) -> Self {
+    /// Create a new hourglass with the specified total time in seconds
+    pub fn new(total_time: f32) -> Self {
         // Calculate flow rate based on total time
         // Flow rate should be 1.0 / total_time_in_seconds
         // This ensures the hourglass empties exactly when the time is up
-        let flow_rate = if total_time.as_secs_f32() > 0.0 {
-            1.0 / total_time.as_secs_f32()
+        let flow_rate = if total_time > 0.0 {
+            1.0 / total_time
         } else {
             1.0 / 60.0 // Default to 60s if total_time is zero
         };
@@ -100,10 +99,10 @@ impl Hourglass {
     }
 
     /// Update the hourglass state
-    pub fn update(&mut self, delta: Duration) {
+    pub fn update(&mut self, delta: f32) {
         // Handle flip animation first
         if self.flipping {
-            self.flip_progress += delta.as_secs_f32() / self.flip_duration;
+            self.flip_progress += delta / self.flip_duration;
 
             if self.flip_progress >= 1.0 {
                 // Flip animation complete
@@ -136,8 +135,7 @@ impl Hourglass {
             self.update_sand(delta);
 
             // Update remaining time based on sand in the upper chamber
-            self.remaining_time =
-                Duration::from_secs_f32(self.upper_chamber * self.total_time.as_secs_f32());
+            self.remaining_time = self.upper_chamber * self.total_time;
 
             // Check if the hourglass is empty (no sand in the upper chamber)
             if self.upper_chamber <= 0.0 {
@@ -152,9 +150,9 @@ impl Hourglass {
     }
 
     /// Update the sand levels
-    fn update_sand(&mut self, delta: Duration) {
+    fn update_sand(&mut self, delta: f32) {
         // Calculate the amount to transfer based on flow rate and delta time
-        let transfer_amount = self.flow_rate * delta.as_secs_f32();
+        let transfer_amount = self.flow_rate * delta;
 
         // Sand always flows from upper to lower (gravity)
         let transfer = transfer_amount.min(self.upper_chamber);

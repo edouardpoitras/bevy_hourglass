@@ -8,7 +8,6 @@ use bevy::{
     sprite::AlphaMode2d,
 };
 use earcutr::earcut;
-use std::time::Duration;
 
 /// Configuration for the hourglass body (the glass part)
 #[derive(Clone, Debug)]
@@ -125,7 +124,7 @@ pub struct HourglassMeshBuilder {
     body_config: Option<HourglassMeshBodyConfig>,
     plates_config: Option<HourglassMeshPlatesConfig>,
     sand_config: Option<HourglassMeshSandConfig>,
-    timing: Option<Duration>,
+    timing: Option<f32>,
     flip_duration: Option<f32>,
     auto_flip: Option<bool>,
 }
@@ -162,8 +161,8 @@ impl HourglassMeshBuilder {
         self
     }
 
-    /// Adds automatic timing to the hourglass with the specified duration
-    pub fn with_timing(mut self, duration: Duration) -> Self {
+    /// Adds automatic timing to the hourglass with the specified duration in seconds
+    pub fn with_timing(mut self, duration: f32) -> Self {
         self.timing = Some(duration);
         self
     }
@@ -604,7 +603,7 @@ pub fn spawn_mesh_hourglass_with_timer(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
-    duration: Duration,
+    duration: f32,
     position: Vec3,
 ) -> Entity {
     HourglassMeshBuilder::new(Transform::from_translation(position))
@@ -620,7 +619,7 @@ pub fn spawn_mesh_hourglass_with_flip(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
-    duration: Duration,
+    duration: f32,
     position: Vec3,
     flip_duration: f32,
     auto_flip: bool,
@@ -640,7 +639,7 @@ pub fn spawn_styled_mesh_hourglass(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
-    duration: Duration,
+    duration: f32,
     position: Vec3,
     bulb_style: BulbStyle,
     neck_style: NeckStyle,

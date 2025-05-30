@@ -5,7 +5,6 @@ use bevy_hourglass::{
     BulbStyle, Hourglass, HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
     HourglassMeshSandConfig, HourglassPlugin, NeckStyle,
 };
-use std::time::Duration;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -122,7 +121,7 @@ fn setup(
             fill_percent: 1.0, // Start with full top bulb
             wall_offset: 8.0,  // 8 pixels from glass walls
         })
-        .with_timing(Duration::from_secs(30)) // 30-second timer for automatic animation
+        .with_timing(30.0) // 30-second timer for automatic animation
         .build(&mut commands, &mut meshes, &mut materials);
 
     // Add the MainHourglass marker to track this specific hourglass
@@ -184,7 +183,7 @@ fn update_ui(
     mut text_query: Query<&mut Text, With<HourglassInfoText>>,
 ) {
     if let (Ok(hourglass), Ok(mut text)) = (hourglasses.single(), text_query.single_mut()) {
-        let remaining_secs = hourglass.remaining_time.as_secs();
+        let remaining_secs = hourglass.remaining_time as u32;
         let status = if hourglass.flipping {
             "Flipping"
         } else if hourglass.flipped {

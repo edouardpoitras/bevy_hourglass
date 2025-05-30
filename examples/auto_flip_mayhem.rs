@@ -3,7 +3,6 @@
 
 use bevy::prelude::*;
 use bevy_hourglass::*;
-use std::time::Duration;
 
 fn main() {
     App::new()
@@ -121,7 +120,7 @@ fn setup(
             fill_percent: sand_fill,
             wall_offset,
         })
-        .with_timing(Duration::from_secs_f32(flip_duration))
+        .with_timing(flip_duration)
         .with_auto_flip(true)
         .with_flip_duration(0.1 + ((seed * 223.0) % 100.0) / 100.0 * 2.9) // 0.1 to 3.0 seconds flip animation
         .build(&mut commands, &mut meshes, &mut materials);

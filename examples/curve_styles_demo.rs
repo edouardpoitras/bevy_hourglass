@@ -2,7 +2,6 @@
 
 use bevy::prelude::*;
 use bevy_hourglass::*;
-use std::time::Duration;
 
 fn main() {
     App::new()
@@ -27,7 +26,7 @@ fn setup(
         &mut commands,
         &mut meshes,
         &mut materials,
-        Duration::from_secs(10),
+        10.0,
         Vec3::new(-400.0, 0.0, 0.0),
         BulbStyle::Circular {
             curvature: 1.0,
@@ -47,7 +46,7 @@ fn setup(
         &mut commands,
         &mut meshes,
         &mut materials,
-        Duration::from_secs(10),
+        10.0,
         Vec3::new(-200.0, 0.0, 0.0),
         BulbStyle::Straight { width_factor: 0.75 },
         NeckStyle::Straight {
@@ -61,7 +60,7 @@ fn setup(
         &mut commands,
         &mut meshes,
         &mut materials,
-        Duration::from_secs(10),
+        10.0,
         Vec3::new(0.0, 0.0, 0.0),
         BulbStyle::Circular {
             curvature: 0.5,
@@ -79,7 +78,7 @@ fn setup(
         &mut commands,
         &mut meshes,
         &mut materials,
-        Duration::from_secs(10),
+        10.0,
         Vec3::new(200.0, 0.0, 0.0),
         BulbStyle::Circular {
             curvature: 3.0,
@@ -121,7 +120,7 @@ fn setup(
             fill_percent: 0.5,                 // Start with half-filled top bulb
             wall_offset: 5.0,                  // Sand is 5 pixels offset from glass wall
         })
-        .with_timing(Duration::from_secs(10))
+        .with_timing(10.0)
         .with_auto_flip(true)
         .with_flip_duration(0.5)
         .build(&mut commands, &mut meshes, &mut materials);

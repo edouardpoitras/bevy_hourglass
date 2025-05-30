@@ -2,7 +2,6 @@
 
 use bevy::prelude::*;
 use bevy_hourglass::*;
-use std::time::Duration;
 
 fn main() {
     App::new()
@@ -26,7 +25,7 @@ fn setup(
         &mut commands,
         &mut meshes,
         &mut materials,
-        Duration::from_secs(5),
+        5.0,
         Vec3::new(-150.0, 0.0, 0.0),
         0.25,  // flip duration
         false, // don't auto-flip
@@ -37,7 +36,7 @@ fn setup(
         &mut commands,
         &mut meshes,
         &mut materials,
-        Duration::from_secs(3),
+        3.0,
         Vec3::new(150.0, 0.0, 0.0),
         0.5,  // flip duration
         true, // auto-flip when empty
