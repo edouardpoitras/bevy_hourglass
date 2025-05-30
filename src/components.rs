@@ -81,8 +81,6 @@ impl Default for Hourglass {
 /// Configuration for sand splash animation
 #[derive(Debug, Clone)]
 pub struct SandSplashConfig {
-    /// Whether sand splash is enabled
-    pub enabled: bool,
     /// Radius around impact point where sand particles appear
     pub splash_radius: f32,
     /// Number of splash particles to spawn
@@ -95,18 +93,20 @@ pub struct SandSplashConfig {
     pub particle_color: Color,
     /// Size of each splash particle
     pub particle_size: f32,
+    /// Vertical offset of splash particles from the impact point
+    pub vertical_offset: f32,
 }
 
 impl Default for SandSplashConfig {
     fn default() -> Self {
         Self {
-            enabled: false,
-            splash_radius: 20.0,
+            splash_radius: 15.0,
             particle_count: 8,
-            particle_duration: 0.5,
+            particle_duration: 0.25,
             spawn_interval: 0.1,
             particle_color: Color::srgb(0.8, 0.6, 0.2),
-            particle_size: 2.0,
+            particle_size: 1.0,
+            vertical_offset: 5.0, // Slightly above the bottom plate
         }
     }
 }

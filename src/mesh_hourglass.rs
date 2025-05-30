@@ -213,8 +213,8 @@ impl HourglassMeshBuilder {
         }
 
         // Add sand splash if configured
-        if let Some(sand_splash_config) = self.sand_splash_config {
-            entity_commands.insert(SandSplash::new(sand_splash_config));
+        if let Some(sand_splash_config) = &self.sand_splash_config {
+            entity_commands.insert(SandSplash::new(sand_splash_config.clone()));
         }
 
         let hourglass_entity = entity_commands.id();

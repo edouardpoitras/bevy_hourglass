@@ -5,13 +5,8 @@
 
 use bevy::prelude::*;
 use bevy_hourglass::{
-    components::SandSplashConfig, 
-    spawn_mesh_hourglass_with_timer, 
-    HourglassMeshBuilder, 
-    HourglassMeshBodyConfig, 
-    HourglassMeshPlatesConfig, 
-    HourglassMeshSandConfig, 
-    HourglassPlugin
+    spawn_mesh_hourglass_with_timer, HourglassMeshBodyConfig, HourglassMeshBuilder,
+    HourglassMeshPlatesConfig, HourglassMeshSandConfig, HourglassPlugin, SandSplashConfig,
 };
 
 fn main() {
@@ -39,18 +34,8 @@ fn setup(
         Vec3::new(-300.0, 0.0, 0.0),
     );
 
-    // Spawn text label for basic hourglass
-    commands.spawn((
-        Text::new("Basic\n(No Splash)"),
-        TextLayout::new_with_justify(JustifyText::Center),
-        Transform::from_translation(Vec3::new(-300.0, -150.0, 0.0)),
-    ));
-
     // Hourglass with default sand splash
-    let default_splash_config = SandSplashConfig {
-        enabled: true,
-        ..Default::default()
-    };
+    let default_splash_config = SandSplashConfig::default();
 
     HourglassMeshBuilder::new(Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)))
         .with_body(HourglassMeshBodyConfig::default())
@@ -60,22 +45,15 @@ fn setup(
         .with_timing(10.0)
         .build(&mut commands, &mut meshes, &mut materials);
 
-    // Spawn text label for default splash
-    commands.spawn((
-        Text::new("Default Splash"),
-        TextLayout::new_with_justify(JustifyText::Center),
-        Transform::from_translation(Vec3::new(0.0, -150.0, 0.0)),
-    ));
-
     // Hourglass with custom sand splash configuration
     let custom_splash_config = SandSplashConfig {
-        enabled: true,
-        splash_radius: 35.0,
-        particle_count: 12,
+        splash_radius: 25.0,
+        particle_count: 10,
         particle_duration: 0.8,
         spawn_interval: 0.05,
-        particle_color: Color::srgb(1.0, 0.4, 0.1), // Bright orange
+        particle_color: Color::srgb(0.0, 0.0, 0.0), // Large black particles
         particle_size: 3.0,
+        vertical_offset: 5.0,
     };
 
     HourglassMeshBuilder::new(Transform::from_translation(Vec3::new(300.0, 0.0, 0.0)))
@@ -85,18 +63,4 @@ fn setup(
         .with_sand_splash(custom_splash_config)
         .with_timing(10.0)
         .build(&mut commands, &mut meshes, &mut materials);
-
-    // Spawn text label for custom splash
-    commands.spawn((
-        Text::new("Custom Splash\n(Orange, Larger)"),
-        TextLayout::new_with_justify(JustifyText::Center),
-        Transform::from_translation(Vec3::new(300.0, -150.0, 0.0)),
-    ));
-
-    // Instructions
-    commands.spawn((
-        Text::new("Sand Splash Demo\nWatch the particles appear where sand hits the bottom!"),
-        TextLayout::new_with_justify(JustifyText::Center),
-        Transform::from_translation(Vec3::new(0.0, 250.0, 0.0)),
-    ));
 }
