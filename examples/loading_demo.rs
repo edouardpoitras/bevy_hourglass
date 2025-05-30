@@ -1,11 +1,11 @@
 //! Loading animation demo with hourglass and animated text.
 
 use bevy::prelude::*;
-use std::time::Duration;
 use bevy_hourglass::{
     BulbStyle, HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
     HourglassMeshSandConfig, HourglassPlugin, NeckStyle,
 };
+use std::time::Duration;
 
 #[derive(Component)]
 struct LoadingText;

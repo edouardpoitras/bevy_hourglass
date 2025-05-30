@@ -44,11 +44,13 @@ mkdir -p wasm
 echo "Building examples for wasm32 target..."
 cargo build --example 2d_mesh_hourglass_with_ui --target wasm32-unknown-unknown --release
 cargo build --example auto_flip_mayhem --target wasm32-unknown-unknown --release
+cargo build --example loading_demo --target wasm32-unknown-unknown --release
 
 # Generate JavaScript bindings
 echo "Generating JavaScript bindings with wasm-bindgen..."
 $WASM_BINDGEN_PATH --out-dir wasm --target web target/wasm32-unknown-unknown/release/examples/2d_mesh_hourglass_with_ui.wasm
 $WASM_BINDGEN_PATH --out-dir wasm --target web target/wasm32-unknown-unknown/release/examples/auto_flip_mayhem.wasm
+$WASM_BINDGEN_PATH --out-dir wasm --target web target/wasm32-unknown-unknown/release/examples/loading_demo.wasm
 
 echo "Build completed successfully!"
 echo "The WASM bundle is now available in the ./wasm directory"

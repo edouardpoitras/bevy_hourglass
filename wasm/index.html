@@ -219,6 +219,12 @@
             <p class="demo-description">A chaotic display of 30 hourglasses with randomized colors, sizes, shapes, and flip durations - watch as they all flip at different intervals creating a mesmerizing effect.</p>
             <div id="demo2-container"></div>
         </div>
+        
+        <div class="demo-section">
+            <h2 class="demo-title">Loading Demo</h2>
+            <p class="demo-description">Watch as the hourglass fills progressively to demonstrate loading progress - perfect for showing download or processing states in games and applications.</p>
+            <div id="demo3-container"></div>
+        </div>
     </div>
     
     <a href="https://github.com/edouardpoitras/bevy_hourglass" target="_blank" class="github-link">
@@ -229,6 +235,7 @@
         // Import our WASM modules
         import init2dMesh from './2d_mesh_hourglass_with_ui.js';
         import initAutoFlip from './auto_flip_mayhem.js';
+        import initLoading from './loading_demo.js';
         
         // Function to handle errors with better user feedback
         function handleError(e) {
@@ -278,6 +285,15 @@
                 await initAutoFlip();
                 moveCanvasToContainer('demo2-container');
                 console.log('✅ Auto-Flip Hourglass Mayhem loaded successfully!');
+                
+                // Small delay to ensure second canvas is properly positioned
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Load third demo
+                console.log('🚀 Starting Loading Demo...');
+                await initLoading();
+                moveCanvasToContainer('demo3-container');
+                console.log('✅ Loading Demo loaded successfully!');
                 
                 // Hide loading screen
                 document.getElementById('loading').classList.add('hidden');
