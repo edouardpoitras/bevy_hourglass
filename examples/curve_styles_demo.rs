@@ -119,6 +119,7 @@ fn setup(
             color: Color::srgb(1.0, 0.9, 0.5), // Light yellow sand
             fill_percent: 0.5,                 // Start with half-filled top bulb
             wall_offset: 5.0,                  // Sand is 5 pixels offset from glass wall
+            bottom_mound_factor: 0.4,          // Nice mound effect for demonstration
         })
         .with_timing(10.0)
         .with_auto_flip(true)

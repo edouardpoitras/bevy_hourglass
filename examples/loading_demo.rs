@@ -59,6 +59,7 @@ fn setup(
             color: Color::WHITE, // White sand
             fill_percent: 1.0,
             wall_offset: 3.0,
+            bottom_mound_factor: 0.1, // Subtle mound effect
         })
         .with_timing(1.5) // Quick 2-second timer for loading effect
         .with_flip_duration(0.5)

@@ -590,6 +590,7 @@ enum NeckSection {
 }
 
 /// Generate sand shape points using the same curve system with smooth fill line interpolation
+#[allow(clippy::too_many_arguments)]
 pub fn generate_sand_outline(
     hourglass_outline: &[Point2D],
     fill_percent: f32,
@@ -598,6 +599,7 @@ pub fn generate_sand_outline(
     neck_height: f32,
     min_y: f32,
     max_y: f32,
+    bottom_mound_factor: f32,
 ) -> Vec<Point2D> {
     if hourglass_outline.is_empty() {
         return Vec::new();
@@ -627,8 +629,18 @@ pub fn generate_sand_outline(
     };
 
     // Generate points with smooth fill line interpolation
-    let filtered_points =
-        generate_outline_with_fill_line(hourglass_outline, fill_line, bulb, center_y);
+    let filtered_points = match bulb {
+        SandBulb::Bottom => generate_outline_with_mounded_fill_line(
+            hourglass_outline,
+            fill_line,
+            center_y,
+            bottom_mound_factor,
+            fill_percent,
+        ),
+        SandBulb::Top => {
+            generate_outline_with_fill_line(hourglass_outline, fill_line, bulb, center_y)
+        }
+    };
 
     if filtered_points.is_empty() {
         return Vec::new();
@@ -796,6 +808,147 @@ fn calculate_line_intersection(p1: Point2D, p2: Point2D, y_line: f32) -> Option<
     let x_intersection = p1[0] + t * (p2[0] - p1[0]);
 
     Some([x_intersection, y_line])
+}
+
+/// Generate outline points with mounded fill line for bottom bulb only
+fn generate_outline_with_mounded_fill_line(
+    hourglass_outline: &[Point2D],
+    base_fill_line: f32,
+    center_y: f32,
+    bottom_mound_factor: f32,
+    fill_percent: f32,
+) -> Vec<Point2D> {
+    if bottom_mound_factor == 0.0 {
+        // No mound - use regular flat fill line
+        return generate_outline_with_fill_line(
+            hourglass_outline,
+            base_fill_line,
+            SandBulb::Bottom,
+            center_y,
+        );
+    }
+
+    let mut result_points = Vec::new();
+    let mut fill_line_intersections = Vec::new();
+
+    // Calculate mound parameters
+    // Mound is most pronounced when there's little sand (high fill_percent in top bulb)
+    // As sand accumulates in bottom, mound flattens out
+    let mound_strength = bottom_mound_factor * fill_percent; // More mound when top is fuller
+
+    // Find the width of the bulb at the base fill line to determine mound extent
+    let mut left_x = 0.0;
+    let mut right_x = 0.0;
+
+    // Find intersections with the base fill line to determine sand width
+    for i in 0..hourglass_outline.len() {
+        let current_point = hourglass_outline[i];
+        let next_point = hourglass_outline[(i + 1) % hourglass_outline.len()];
+
+        if let Some(intersection) =
+            calculate_line_intersection(current_point, next_point, base_fill_line)
+        {
+            if intersection[0] < 0.0 {
+                left_x = intersection[0];
+            } else {
+                right_x = intersection[0];
+            }
+        }
+    }
+
+    let sand_width = right_x - left_x;
+    if sand_width <= 0.0 {
+        return generate_outline_with_fill_line(
+            hourglass_outline,
+            base_fill_line,
+            SandBulb::Bottom,
+            center_y,
+        );
+    }
+
+    // Calculate mounded fill line closure
+    let mounded_fill_line = |x: f32| -> f32 {
+        if sand_width <= 0.0 {
+            return base_fill_line;
+        }
+
+        // Normalize x position within sand width (-1.0 to 1.0)
+        let normalized_x = (x - (left_x + right_x) * 0.5) / (sand_width * 0.5);
+        let normalized_x = normalized_x.clamp(-1.0, 1.0);
+
+        // Create parabolic mound: highest at center (x=0), zero at edges
+        let mound_height = mound_strength * sand_width * 0.1 * (1.0 - normalized_x * normalized_x);
+        base_fill_line + mound_height
+    };
+
+    // Process each segment of the outline
+    for i in 0..hourglass_outline.len() {
+        let current_point = hourglass_outline[i];
+        let next_point = hourglass_outline[(i + 1) % hourglass_outline.len()];
+
+        // Check if current point should be included - for bottom bulb only
+        let current_mounded_fill = mounded_fill_line(current_point[0]);
+        let current_included =
+            current_point[1] <= center_y && current_point[1] <= current_mounded_fill;
+
+        let next_mounded_fill = mounded_fill_line(next_point[0]);
+        let next_included = next_point[1] <= center_y && next_point[1] <= next_mounded_fill;
+
+        // Add current point if it should be included
+        if current_included {
+            result_points.push(current_point);
+        }
+
+        // For segments that cross the mounded fill line, we need to find intersections
+        // This is more complex than the flat case since our fill line is curved
+        if current_included != next_included {
+            // Approximate intersection by sampling along the segment
+            let samples = 10;
+            for j in 1..samples {
+                let t = j as f32 / samples as f32;
+                let sample_x = current_point[0] * (1.0 - t) + next_point[0] * t;
+                let sample_y = current_point[1] * (1.0 - t) + next_point[1] * t;
+                let sample_mounded_fill = mounded_fill_line(sample_x);
+
+                let sample_included = sample_y <= center_y && sample_y <= sample_mounded_fill;
+
+                if sample_included != current_included {
+                    // Found approximate intersection
+                    fill_line_intersections.push([sample_x, sample_mounded_fill]);
+                    result_points.push([sample_x, sample_mounded_fill]);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Add mounded fill line points to close the shape
+    if !fill_line_intersections.is_empty() {
+        // Sort intersections by x-coordinate
+        fill_line_intersections.sort_by(|a, b| a[0].partial_cmp(&b[0]).unwrap());
+
+        // Generate additional points along the mounded fill line for smooth curve
+        if fill_line_intersections.len() >= 2 {
+            let leftmost = fill_line_intersections[0];
+            let rightmost = fill_line_intersections[fill_line_intersections.len() - 1];
+
+            // Add points along the mounded curve between intersections
+            let curve_samples = 20;
+            let mut curve_points = Vec::new();
+
+            for i in 0..=curve_samples {
+                let t = i as f32 / curve_samples as f32;
+                let x = leftmost[0] * (1.0 - t) + rightmost[0] * t;
+                let y = mounded_fill_line(x);
+                curve_points.push([x, y]);
+            }
+
+            // For bottom bulb, add curve points in forward order
+            result_points.extend(&curve_points);
+        }
+    }
+
+    result_points
 }
 
 /// Which bulb to generate sand for
