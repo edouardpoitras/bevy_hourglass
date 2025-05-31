@@ -140,6 +140,7 @@ fn setup(
             color: Color::srgb(0.9, 0.8, 0.6),
             fill_percent: 1.0,  // Start with full top bulb
             wall_offset: 8.0,   // Distance from glass walls
+            bottom_mound_factor: 0.2, // Sand mound effect
         })
         .with_timing(Duration::from_secs(30)) // 30-second timer for automatic animation
         .with_auto_flip(true)                 // Enable auto-flipping when empty

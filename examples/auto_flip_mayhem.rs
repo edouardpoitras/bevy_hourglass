@@ -119,6 +119,7 @@ fn setup(
             color: sand_color,
             fill_percent: sand_fill,
             wall_offset,
+            bottom_mound_factor: ((seed * 229.0) % 100.0) / 100.0 * 0.5, // 0.0 to 0.5 random mound
         })
         .with_timing(flip_duration)
         .with_auto_flip(true)

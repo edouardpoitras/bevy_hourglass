@@ -46,6 +46,7 @@ fn setup(
             color: Color::srgb(0.9, 0.8, 0.6),
             fill_percent: 1.0,
             wall_offset: 4.0,
+            bottom_mound_factor: 0.2, // Slight mound effect
         })
         .with_sand_splash(SandSplashConfig::default())
         .with_timing(10.0) // 10-second timer for automatic animation

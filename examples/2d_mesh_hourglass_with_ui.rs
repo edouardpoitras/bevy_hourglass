@@ -118,8 +118,9 @@ fn setup(
         })
         .with_sand(HourglassMeshSandConfig {
             color: Color::srgb(0.9, 0.8, 0.6),
-            fill_percent: 1.0, // Start with full top bulb
-            wall_offset: 8.0,  // 8 pixels from glass walls
+            fill_percent: 1.0,        // Start with full top bulb
+            wall_offset: 8.0,         // 8 pixels from glass walls
+            bottom_mound_factor: 0.3, // 30% mound effect for demonstration
         })
         .with_sand_splash(SandSplashConfig::default())
         .with_timing(30.0) // 30-second timer for automatic animation

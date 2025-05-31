@@ -51,8 +51,9 @@ impl Default for HourglassMeshPlatesConfig {
 #[derive(Clone, Debug)]
 pub struct HourglassMeshSandConfig {
     pub color: Color,
-    pub fill_percent: f32, // 0.0 to 1.0, how full the top bulb is
-    pub wall_offset: f32,  // Distance in pixels from glass walls
+    pub fill_percent: f32,        // 0.0 to 1.0, how full the top bulb is
+    pub wall_offset: f32,         // Distance in pixels from glass walls
+    pub bottom_mound_factor: f32, // 0.0 to 1.0, how pronounced the bottom sand mound is
 }
 
 impl Default for HourglassMeshSandConfig {
@@ -61,6 +62,7 @@ impl Default for HourglassMeshSandConfig {
             color: Color::srgb(0.9, 0.8, 0.6), // Sand color
             fill_percent: 1.0,                 // Start with full top bulb
             wall_offset: 8.0,                  // 8 pixels from glass walls
+            bottom_mound_factor: 0.0,          // No mound by default
         }
     }
 }
@@ -398,6 +400,7 @@ impl HourglassMeshBuilder {
             body_config.neck_style.height(),
             -half_height,
             half_height,
+            sand_config.bottom_mound_factor,
         );
 
         let top_sand_entity = if let Some(mesh) = Self::create_mesh_from_points(top_points) {
@@ -428,6 +431,7 @@ impl HourglassMeshBuilder {
             body_config.neck_style.height(),
             -half_height,
             half_height,
+            sand_config.bottom_mound_factor,
         );
 
         let bottom_sand_entity = if let Some(mesh) = Self::create_mesh_from_points(bottom_points) {
@@ -534,6 +538,7 @@ pub fn update_mesh_hourglass_sand(
                                 sand_state.body_config.neck_style.height(),
                                 -half_height,
                                 half_height,
+                                sand_state.sand_config.bottom_mound_factor,
                             );
 
                             if let Some(new_mesh) =
@@ -570,6 +575,7 @@ pub fn update_mesh_hourglass_sand(
                                 sand_state.body_config.neck_style.height(),
                                 -half_height,
                                 half_height,
+                                sand_state.sand_config.bottom_mound_factor,
                             );
 
                             if let Some(new_mesh) =
