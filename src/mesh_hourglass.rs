@@ -1,6 +1,6 @@
 //! Mesh-based hourglass implementation with composable parts.
 
-use crate::components::Hourglass;
+use crate::components::{Hourglass, SandSplash, SandSplashConfig};
 use crate::curves::{generate_sand_outline, BulbStyle, HourglassShapeBuilder, NeckStyle, SandBulb};
 use bevy::{
     prelude::*,
@@ -124,6 +124,7 @@ pub struct HourglassMeshBuilder {
     body_config: Option<HourglassMeshBodyConfig>,
     plates_config: Option<HourglassMeshPlatesConfig>,
     sand_config: Option<HourglassMeshSandConfig>,
+    sand_splash_config: Option<SandSplashConfig>,
     timing: Option<f32>,
     flip_duration: Option<f32>,
     auto_flip: Option<bool>,
@@ -137,6 +138,7 @@ impl HourglassMeshBuilder {
             body_config: None,
             plates_config: None,
             sand_config: None,
+            sand_splash_config: None,
             timing: None,
             flip_duration: None,
             auto_flip: None,
@@ -179,6 +181,12 @@ impl HourglassMeshBuilder {
         self
     }
 
+    /// Adds sand splash configuration to the hourglass
+    pub fn with_sand_splash(mut self, config: SandSplashConfig) -> Self {
+        self.sand_splash_config = Some(config);
+        self
+    }
+
     /// Builds the hourglass entity and all its configured components
     pub fn build(
         self,
@@ -202,6 +210,11 @@ impl HourglassMeshBuilder {
             }
 
             entity_commands.insert(hourglass);
+        }
+
+        // Add sand splash if configured
+        if let Some(sand_splash_config) = &self.sand_splash_config {
+            entity_commands.insert(SandSplash::new(sand_splash_config.clone()));
         }
 
         let hourglass_entity = entity_commands.id();

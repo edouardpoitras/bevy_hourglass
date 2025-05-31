@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use bevy_hourglass::{
     BulbStyle, HourglassMeshBodyConfig, HourglassMeshBuilder, HourglassMeshPlatesConfig,
-    HourglassMeshSandConfig, HourglassPlugin, NeckStyle,
+    HourglassMeshSandConfig, HourglassPlugin, NeckStyle, SandSplashConfig,
 };
 
 fn main() {
@@ -47,6 +47,7 @@ fn setup(
             fill_percent: 1.0,
             wall_offset: 4.0,
         })
+        .with_sand_splash(SandSplashConfig::default())
         .with_timing(10.0) // 10-second timer for automatic animation
         .build(&mut commands, &mut meshes, &mut materials);
 }

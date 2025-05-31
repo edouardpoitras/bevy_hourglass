@@ -78,6 +78,66 @@ impl Default for Hourglass {
     }
 }
 
+/// Configuration for sand splash animation
+#[derive(Debug, Clone)]
+pub struct SandSplashConfig {
+    /// Radius around impact point where sand particles appear
+    pub splash_radius: f32,
+    /// Number of splash particles to spawn
+    pub particle_count: u32,
+    /// Duration each splash particle stays visible (in seconds)
+    pub particle_duration: f32,
+    /// How often to spawn new splash particles (in seconds)
+    pub spawn_interval: f32,
+    /// Color of splash particles
+    pub particle_color: Color,
+    /// Size of each splash particle
+    pub particle_size: f32,
+    /// Vertical offset of splash particles from the impact point
+    pub vertical_offset: f32,
+}
+
+impl Default for SandSplashConfig {
+    fn default() -> Self {
+        Self {
+            splash_radius: 15.0,
+            particle_count: 8,
+            particle_duration: 0.25,
+            spawn_interval: 0.1,
+            particle_color: Color::srgb(0.8, 0.6, 0.2),
+            particle_size: 1.0,
+            vertical_offset: 5.0, // Slightly above the bottom plate
+        }
+    }
+}
+
+/// Component that tracks sand splash state for an hourglass
+#[derive(Component, Debug, Clone)]
+pub struct SandSplash {
+    pub config: SandSplashConfig,
+    /// Timer for spawning new splash particles
+    pub spawn_timer: f32,
+    /// Track if sand was flowing in the previous frame (to detect start of impact)
+    pub was_flowing: bool,
+}
+
+impl SandSplash {
+    pub fn new(config: SandSplashConfig) -> Self {
+        Self {
+            config,
+            spawn_timer: 0.0,
+            was_flowing: false,
+        }
+    }
+}
+
+/// Marker component for sand splash particles
+#[derive(Component, Debug)]
+pub struct SandSplashParticle {
+    /// Time remaining before particle disappears
+    pub lifetime: f32,
+}
+
 impl Hourglass {
     /// Create a new hourglass with the specified total time in seconds
     pub fn new(total_time: f32) -> Self {

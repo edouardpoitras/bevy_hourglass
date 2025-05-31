@@ -3,7 +3,7 @@
 use crate::events::*;
 use crate::mesh_hourglass::{sync_mesh_hourglass_with_timer, update_mesh_hourglass_sand};
 use crate::resources::HourglassConfig;
-use crate::systems::update_hourglasses;
+use crate::systems::{update_hourglasses, update_sand_splash};
 use bevy::prelude::*;
 
 /// Plugin for adding hourglass functionality to Bevy apps
@@ -25,7 +25,12 @@ impl Plugin for HourglassPlugin {
         // Mesh-based visualization systems
         app.add_systems(
             Update,
-            (sync_mesh_hourglass_with_timer, update_mesh_hourglass_sand).chain(),
+            (
+                sync_mesh_hourglass_with_timer,
+                update_mesh_hourglass_sand,
+                update_sand_splash,
+            )
+                .chain(),
         );
     }
 }
