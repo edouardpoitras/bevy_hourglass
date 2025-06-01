@@ -197,20 +197,26 @@ impl HourglassMeshBuilder {
         // Create parent entity for the hourglass
         let mut entity_commands = commands.spawn((HourglassMesh, self.transform));
 
-        // Add automatic timing component if specified
-        if let Some(duration) = self.timing {
-            let mut hourglass = Hourglass::new(duration);
-
-            // Apply flip configuration
-            if let Some(flip_duration) = self.flip_duration {
-                hourglass.flip_duration = flip_duration;
+        // Always add Hourglass component - use timing if specified, otherwise create default
+        let mut hourglass = if let Some(duration) = self.timing {
+            Hourglass::new(duration)
+        } else {
+            // Create default hourglass but don't start it running
+            Hourglass {
+                running: false,
+                ..Default::default()
             }
-            if let Some(auto_flip) = self.auto_flip {
-                hourglass.auto_flip_when_empty = auto_flip;
-            }
+        };
 
-            entity_commands.insert(hourglass);
+        // Apply flip configuration
+        if let Some(flip_duration) = self.flip_duration {
+            hourglass.flip_duration = flip_duration;
         }
+        if let Some(auto_flip) = self.auto_flip {
+            hourglass.auto_flip_when_empty = auto_flip;
+        }
+
+        entity_commands.insert(hourglass);
 
         // Add sand splash if configured
         if let Some(sand_splash_config) = &self.sand_splash_config {
