@@ -152,7 +152,7 @@ fn setup(
 
 |bevy|bevy_hourglass|
 |---|---|
-|0.16|0.2|
+|0.16|0.3|
 
 ## License
 
