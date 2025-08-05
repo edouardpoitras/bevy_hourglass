@@ -459,7 +459,7 @@ impl HourglassMeshBuilder {
     }
 
     /// Create a mesh from a set of 2D points
-    fn create_mesh_from_points(points: Vec<[f32; 2]>) -> Option<Mesh> {
+    pub fn create_mesh_from_points(points: Vec<[f32; 2]>) -> Option<Mesh> {
         if points.is_empty() {
             return None;
         }
