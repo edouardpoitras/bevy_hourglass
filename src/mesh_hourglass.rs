@@ -548,6 +548,14 @@ pub fn update_mesh_hourglass_sand(
                                 let mesh_handle = meshes.add(new_mesh);
                                 if let Some(mut existing_mesh) = mesh_handle_opt {
                                     existing_mesh.0 = mesh_handle;
+                                    // Update material color if it exists
+                                    if let Some(material_handle) = material_opt {
+                                        if let Some(material) =
+                                            materials.get_mut(&material_handle.0)
+                                        {
+                                            material.color = sand_state.sand_config.color;
+                                        }
+                                    }
                                 } else {
                                     // Add mesh component back if it was removed
                                     let material = if let Some(mat) = material_opt {
@@ -583,6 +591,14 @@ pub fn update_mesh_hourglass_sand(
                             {
                                 let mesh_handle = meshes.add(new_mesh);
                                 if let Some(mut existing_mesh) = mesh_handle_opt {
+                                    // Update material color if it exists
+                                    if let Some(material_handle) = material_opt {
+                                        if let Some(material) =
+                                            materials.get_mut(&material_handle.0)
+                                        {
+                                            material.color = sand_state.sand_config.color;
+                                        }
+                                    }
                                     existing_mesh.0 = mesh_handle;
                                 } else {
                                     // Add mesh component back if it was removed
@@ -614,6 +630,12 @@ pub fn sync_mesh_hourglass_with_timer(mut mesh_query: MeshHourglassQuery) {
     for (hourglass, mut sand_state) in mesh_query.iter_mut() {
         // Always use upper_chamber for visual top bulb fill - keep it simple
         update_sand_fill_percent(&mut sand_state, hourglass.upper_chamber);
+
+        // Also sync the sand color
+        if sand_state.sand_config.color != hourglass.sand_color {
+            sand_state.sand_config.color = hourglass.sand_color;
+            sand_state.needs_update = true;
+        }
     }
 }
 
