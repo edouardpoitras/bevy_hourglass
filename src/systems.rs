@@ -152,13 +152,13 @@ fn spawn_splash_particle(
     impact_position: Vec3,
     config: &crate::components::SandSplashConfig,
 ) {
-    let mut rng = thread_rng();
+    let mut rng = rand::rng();
 
     // Random offset within splash radius
-    let angle = rng.gen::<f32>() * 2.0 * std::f32::consts::PI;
-    let distance = rng.gen::<f32>() * config.splash_radius;
+    let angle = rng.random::<f32>() * 2.0 * std::f32::consts::PI;
+    let distance = rng.random::<f32>() * config.splash_radius;
     let offset_x = angle.cos() * distance;
-    let offset_y = rng.gen::<f32>() * 10.0 - 5.0; // Small vertical variation
+    let offset_y = rng.random::<f32>() * 10.0 - 5.0; // Small vertical variation
 
     let particle_position = impact_position + Vec3::new(offset_x, offset_y, 0.0);
 
