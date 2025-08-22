@@ -7,6 +7,12 @@ use bevy_hourglass::{
 };
 use std::time::Duration;
 
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+use web_sys::console;
+
 #[derive(Component)]
 struct LoadingText;
 
@@ -16,7 +22,37 @@ struct LoadingDot {
     timer: Timer,
 }
 
+// This is the main entry point for all targets
 fn main() {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // For native builds, just run the app
+        run();
+    }
+
+    // For WASM builds, main is not the entry point, but needs to exist for the example
+    #[cfg(target_arch = "wasm32")]
+    {
+        // This won't actually run in WASM context
+        println!("Note: When targeting WASM, this main function is not the entry point");
+    }
+}
+
+// Entry point for wasm
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(start)]
+pub fn start() -> Result<(), JsValue> {
+    // Redirect panic messages to the browser console
+    console_error_panic_hook::set_once();
+
+    // Start the Bevy app
+    run();
+
+    Ok(())
+}
+
+// Shared run function for both wasm and native
+fn run() {
     App::new()
         .add_plugins((DefaultPlugins, HourglassPlugin))
         .add_systems(Startup, setup)
